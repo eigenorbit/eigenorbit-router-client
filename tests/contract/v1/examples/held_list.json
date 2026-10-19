@@ -1,0 +1,21 @@
+{
+  "holds": [
+    {
+      "job_id": "01926b40-6c12-7a3e-9b8d-5e4f3a2b1c0d",
+      "device": "braket/sv1",
+      "method": "run",
+      "shots": 1000,
+      "amount_usd_micro": 15000,
+      "since": "2026-09-29T16:52:08Z"
+    },
+    {
+      "job_id": "01926b42-0d7e-7f51-8a9b-4c3d2e1f0a9b",
+      "device": "braket/iqm_garnet",
+      "method": "sample",
+      "shots": 100,
+      "amount_usd_micro": 377400,
+      "since": "2026-09-29T16:58:31Z"
+    }
+  ],
+  "total_usd_micro": 392400
+}

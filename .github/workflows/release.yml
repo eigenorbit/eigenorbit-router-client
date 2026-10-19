@@ -1,0 +1,125 @@
+name: release
+
+# Manual release: Actions -> release -> Run workflow on `main`. Merging to
+# `main` runs CI only. The run re-tests the tree (ci.yml, including the offline
+# parity suite), then semantic-release bumps the version, writes the changelog,
+# tags, builds the wheel and sdist and creates the GitHub release; the `pypi`
+# job publishes those files.
+#
+# The PyPI trusted publisher for `eigenorbit-router-client` is bound to this
+# file name and to the `pypi` environment, so keep both.
+
+on:
+  workflow_dispatch:
+    inputs:
+      prerelease:
+        description: "Release candidate (X.Y.Z-rc.N)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    # Releases come from `main` only. On any other branch `release` is skipped
+    # together with its `needs`.
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    needs: verify
+    runs-on: ubuntu-latest
+
+    # GITHUB_TOKEN only reads here: the release-bot token below does every write.
+    permissions:
+      contents: read
+
+    outputs:
+      released: ${{ steps.dist.outputs.released }}
+
+    steps:
+      - name: Check-out repository
+        # No credentials stay in .git/config: semantic-release pushes with
+        # GH_TOKEN itself, so the dependencies installed below never see a token.
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884  # v10.3.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: "**/uv.lock"
+
+      - name: Install package
+        run: uv sync --dev
+
+      - name: Mint release-bot token
+        # A GitHub App token, not GITHUB_TOKEN: the version commit and tag have
+        # to pass the protection on `main` and on `v*` tags, which list the
+        # app in their bypass. It is minted after the dependency install and
+        # limited to contents (commit, tag, release). semantic-release passes
+        # its build command a fixed set of variables, never GH_TOKEN.
+        id: release-bot
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510  # v3.3.0
+        with:
+          client-id: ${{ vars.RELEASE_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: Run semantic-release
+        env:
+          GH_TOKEN: ${{ steps.release-bot.outputs.token }}
+          BOT: ${{ steps.release-bot.outputs.app-slug }}[bot]
+        run: |
+          git config user.name "$BOT"
+          git config user.email "$(gh api "/users/$BOT" --jq .id)+$BOT@users.noreply.github.com"
+          uv run semantic-release version ${{ inputs.prerelease && '--as-prerelease' || '' }}
+          uv run semantic-release publish
+
+      - name: Keep the built distributions
+        # semantic-release builds only when it cuts a version; with no `feat`
+        # or `fix` since the last tag, dist/ stays empty and nothing is published.
+        id: dist
+        run: |
+          if ls dist/*.whl >/dev/null 2>&1; then
+            echo "released=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload distributions
+        if: steps.dist.outputs.released == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  pypi:
+    needs: release
+    if: needs.release.outputs.released == 'true'
+    runs-on: ubuntu-latest
+    environment: pypi
+
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download distributions
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2

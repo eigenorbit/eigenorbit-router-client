@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "job_not_cancellable",
+    "message": "The job is completed; only a queued or running job can be cancelled",
+    "details": {
+      "status": "completed"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "ibm_connection_invalid",
+    "message": "Your IBM account connection stopped working. Reconnect it under IBM account in the router web app.",
+    "details": {}
+  }
+}

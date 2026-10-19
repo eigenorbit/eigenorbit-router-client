@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "key_name_taken",
+    "message": "You already have an active key with this name. Choose another name.",
+    "details": {}
+  }
+}

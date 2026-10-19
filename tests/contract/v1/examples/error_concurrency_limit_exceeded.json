@@ -1,0 +1,10 @@
+{
+  "error": {
+    "code": "concurrency_limit_exceeded",
+    "message": "You have 100 jobs in flight; the limit is 100. Wait for one to finish or cancel one.",
+    "details": {
+      "limit": 100,
+      "in_flight": 100
+    }
+  }
+}

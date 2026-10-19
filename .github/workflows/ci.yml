@@ -1,0 +1,110 @@
+name: ci
+
+# Client test suite on every pull request and every push to main. release.yml
+# reuses this workflow (workflow_call), so the same suite gates every release.
+#
+# The suite is offline by design: tests/conftest.py refuses every socket
+# connection, and the router is replaced by the in-process FakeRouter. It
+# includes the offline codec parity suite (tests/test_offline_parity.py),
+# which checks requests, results and errors against the router's contract v1
+# schemas and examples vendored under tests/contract/. That suite is the
+# release gate: a red run blocks both the pull request and the release.
+#
+# The `package` job builds the wheel and sdist, checks their metadata and
+# installs the wheel into a clean virtual environment with eigenkit from PyPI.
+on:
+  pull_request: {}
+  push:
+    branches: [main]
+  workflow_call: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  # github.workflow is the caller's name under workflow_call, so the release
+  # run's test job never shares (or cancels) the plain ci run's group.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
+
+    steps:
+      - name: Check-out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884  # v10.3.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: "**/uv.lock"
+
+      - name: Install dependencies (locked)
+        # --locked, not --frozen: a lock that no longer matches pyproject.toml
+        # fails the run.
+        run: uv sync --locked
+
+      - name: Lint
+        run: uv run ruff check --no-cache .
+
+      - name: Vendored contract matches its manifest
+        run: uv run python scripts/sync_contract.py --verify
+
+      - name: Tests (offline, including the parity suite)
+        run: uv run pytest -q
+
+  package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check-out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884  # v10.3.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: "**/uv.lock"
+
+      - name: Build the wheel and sdist
+        run: uv build
+
+      - name: Check the distribution metadata
+        run: uvx twine check --strict dist/*
+
+      - name: Install the wheel into a clean Python 3.12 environment
+        run: |
+          uv venv --python 3.12 "$RUNNER_TEMP/smoke"
+          uv pip install --python "$RUNNER_TEMP/smoke/bin/python" dist/*.whl
+
+      - name: Import the installed client
+        # Runs outside the checkout with -I, so only the installed wheel is
+        # importable, never the checkout's package directory.
+        working-directory: ${{ runner.temp }}
+        run: |
+          "$RUNNER_TEMP/smoke/bin/python" -I -c '
+          import importlib.metadata as m
+          from eigenkit.core.provider import registered_names
+          import eigenorbit_router_client as c
+          assert "router" in registered_names()
+          assert c.RouterConfig.__module__ == "eigenorbit_router_client.config"
+          v = tuple(int(x) for x in m.version("eigenkit").split(".")[:3])
+          assert v >= (1, 0, 1), v
+          print("smoke ok", m.version("eigenkit"))
+          '

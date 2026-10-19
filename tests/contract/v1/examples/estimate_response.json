@@ -1,0 +1,11 @@
+{
+  "device": "braket/sv1",
+  "method": "run",
+  "shots": 0,
+  "estimate_usd_micro": 90000,
+  "vendor_cost_usd_micro": 75000,
+  "fee_usd_micro": 15000,
+  "price_version": "braket/sv1@1",
+  "available_usd_micro": 910000,
+  "would_reject_reason": null
+}

@@ -1,0 +1,28 @@
+{
+  "additionalProperties": false,
+  "description": "PUT /v1/account/ibm-connection body: the user's IBM Quantum API key and instance.\n\nChecked with IBM synchronously (within 20 s) before anything is saved; on an\nexisting connection it is a replace. Unknown fields are refused.",
+  "properties": {
+    "crn": {
+      "description": "The Cloud Resource Name of the IBM Quantum instance to run on. The server checks its shape (a malformed CRN is 422 validation_error on field crn).",
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Crn",
+      "type": "string"
+    },
+    "token": {
+      "description": "The IBM Quantum API key. Write-only: never returned or logged.",
+      "format": "password",
+      "maxLength": 512,
+      "minLength": 8,
+      "title": "Token",
+      "type": "string",
+      "writeOnly": true
+    }
+  },
+  "required": [
+    "token",
+    "crn"
+  ],
+  "title": "IbmConnectionIn",
+  "type": "object"
+}

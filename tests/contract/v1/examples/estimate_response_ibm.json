@@ -1,0 +1,11 @@
+{
+  "device": "ibm/ibm_fez",
+  "method": "sample",
+  "shots": 4000,
+  "estimate_usd_micro": 0,
+  "vendor_cost_usd_micro": 0,
+  "fee_usd_micro": 0,
+  "price_version": "ibm/ibm_fez@1",
+  "available_usd_micro": 0,
+  "would_reject_reason": null
+}

@@ -1,0 +1,12 @@
+{
+  "error": {
+    "code": "protocol_unsupported",
+    "message": "This router speaks EO-Protocol-Version 1..1; the request's version is missing or unsupported. Upgrade eigenorbit-router-client.",
+    "details": {
+      "client_version": 2,
+      "supported_min": 1,
+      "supported_max": 1,
+      "min_client_version": null
+    }
+  }
+}

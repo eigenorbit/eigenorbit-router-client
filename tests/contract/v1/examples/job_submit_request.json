@@ -1,0 +1,43 @@
+{
+  "device": "braket/sv1",
+  "method": "run",
+  "shots": 0,
+  "circuit_spec": {
+    "n_qubits": 1,
+    "n_weights": 1,
+    "n_inputs": 0,
+    "gates": [
+      {
+        "n": "RY",
+        "q": [
+          0
+        ],
+        "p": [
+          {
+            "t": "WeightRef",
+            "i": 0
+          }
+        ]
+      }
+    ]
+  },
+  "observables": [
+    {
+      "terms": [
+        {
+          "coeff": 1.0,
+          "paulis": [
+            [
+              "Z",
+              0
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "weights": [
+    0.5
+  ],
+  "inputs": []
+}

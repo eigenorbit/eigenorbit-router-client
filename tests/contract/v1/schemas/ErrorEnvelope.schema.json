@@ -1,0 +1,90 @@
+{
+  "$defs": {
+    "ErrorBody": {
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/ErrorCode"
+        },
+        "details": {
+          "additionalProperties": true,
+          "title": "Details",
+          "type": "object"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "title": "ErrorBody",
+      "type": "object"
+    },
+    "ErrorCode": {
+      "enum": [
+        "unauthenticated",
+        "idempotency_key_required",
+        "idempotency_conflict",
+        "protocol_unsupported",
+        "validation_error",
+        "unknown_device",
+        "device_unavailable",
+        "method_not_supported",
+        "batch_not_supported",
+        "circuit_invalid",
+        "shots_invalid",
+        "insufficient_balance",
+        "negative_balance",
+        "job_not_found",
+        "job_not_completed",
+        "job_not_cancellable",
+        "not_found",
+        "method_not_allowed",
+        "not_implemented",
+        "ledger_unavailable",
+        "auth_unavailable",
+        "internal_error",
+        "vendor_rejected",
+        "vendor_failed",
+        "vendor_unavailable",
+        "key_budget_exceeded",
+        "key_revoked",
+        "key_name_taken",
+        "terms_not_accepted",
+        "user_blocked",
+        "concurrency_limit_exceeded",
+        "consent_required",
+        "access_restricted",
+        "region_blocked",
+        "result_expired",
+        "ibm_account_not_connected",
+        "ibm_connection_invalid",
+        "ibm_token_rejected",
+        "ibm_instance_not_found",
+        "ibm_no_devices",
+        "ibm_unreachable",
+        "ibm_validation_unavailable",
+        "ibm_connection_busy",
+        "ibm_credentials_rejected",
+        "ibm_quota_exhausted",
+        "ibm_target_mismatch",
+        "ibm_device_not_on_instance"
+      ],
+      "title": "ErrorCode",
+      "type": "string"
+    }
+  },
+  "description": "Every non-2xx response body.",
+  "properties": {
+    "error": {
+      "$ref": "#/$defs/ErrorBody"
+    }
+  },
+  "required": [
+    "error"
+  ],
+  "title": "ErrorEnvelope",
+  "type": "object"
+}

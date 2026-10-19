@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "terms_not_accepted",
+    "message": "Accept the current EigenOrbit Router terms (version 2026-10-16) at https://router.eigenorbit.com/ to create API keys and run jobs",
+    "details": {
+      "required_version": "2026-10-16",
+      "accept_url": "https://router.eigenorbit.com/",
+      "terms_url": "https://router.eigenorbit.com/terms/2026-10-16"
+    }
+  }
+}

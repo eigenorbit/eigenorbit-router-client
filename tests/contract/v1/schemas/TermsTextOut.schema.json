@@ -1,0 +1,32 @@
+{
+  "description": "GET /v1/account/terms/{version} response (public): one shipped terms text.\n\n`text_sha256` is the SHA-256 of the exact Markdown bytes; `is_current` says\nwhether this is the version users must accept now.",
+  "properties": {
+    "is_current": {
+      "title": "Is Current",
+      "type": "boolean"
+    },
+    "markdown": {
+      "title": "Markdown",
+      "type": "string"
+    },
+    "text_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Text Sha256",
+      "type": "string"
+    },
+    "version": {
+      "maxLength": 10,
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "version",
+    "text_sha256",
+    "markdown",
+    "is_current"
+  ],
+  "title": "TermsTextOut",
+  "type": "object"
+}

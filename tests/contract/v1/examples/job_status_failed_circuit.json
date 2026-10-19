@@ -1,0 +1,24 @@
+{
+  "id": "01a0d4e2-3b10-7c42-9e61-5a7f0c2d8b14",
+  "status": "failed",
+  "billing": "released",
+  "device": "braket/iqm_garnet",
+  "method": "run",
+  "shots": 100,
+  "estimate_usd_micro": 534000,
+  "price_version": "braket/iqm_garnet@1",
+  "error": {
+    "code": "vendor_rejected",
+    "message": "The circuit could not be built for the device: ValueError: Observables cannot be sampled simultaneously",
+    "category": "circuit"
+  },
+  "actual_cost_usd_micro": 0,
+  "vendor_cost_usd_micro": 0,
+  "fee_usd_micro": 0,
+  "created_at": "2026-09-28T10:04:11.203000Z",
+  "updated_at": "2026-09-28T10:04:14.611000Z",
+  "completed_at": "2026-09-28T10:04:12.950000Z",
+  "result_expires_at": "2026-12-27T10:04:12.950000Z",
+  "credential_source": null,
+  "ibm_usage_seconds": null
+}

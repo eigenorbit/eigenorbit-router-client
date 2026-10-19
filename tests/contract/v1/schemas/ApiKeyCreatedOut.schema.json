@@ -1,0 +1,89 @@
+{
+  "description": "POST /v1/keys 201 response. `key` is shown exactly once (Cache-Control: no-store).",
+  "properties": {
+    "budget_usd_micro": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Budget Usd Micro"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "held_usd_micro": {
+      "default": 0,
+      "title": "Held Usd Micro",
+      "type": "integer"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "key": {
+      "title": "Key",
+      "type": "string"
+    },
+    "last_four": {
+      "title": "Last Four",
+      "type": "string"
+    },
+    "last_used_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Last Used At"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "prefix": {
+      "title": "Prefix",
+      "type": "string"
+    },
+    "revoked_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Revoked At"
+    },
+    "spent_usd_micro": {
+      "default": 0,
+      "title": "Spent Usd Micro",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "prefix",
+    "last_four",
+    "created_at",
+    "key"
+  ],
+  "title": "ApiKeyCreatedOut",
+  "type": "object"
+}

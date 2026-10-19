@@ -1,0 +1,20 @@
+{
+  "id": "01a0f2b7-4c18-7d03-a6e5-2f9b0c7d1e42",
+  "status": "completed",
+  "billing": null,
+  "device": "ibm/ibm_fez",
+  "method": "sample",
+  "shots": 4000,
+  "estimate_usd_micro": 0,
+  "price_version": "ibm/ibm_fez@1",
+  "error": null,
+  "actual_cost_usd_micro": null,
+  "vendor_cost_usd_micro": null,
+  "fee_usd_micro": null,
+  "created_at": "2026-10-03T09:14:02.418000Z",
+  "updated_at": "2026-10-03T09:15:47.093000Z",
+  "completed_at": "2026-10-03T09:15:41.560000Z",
+  "result_expires_at": "2027-01-01T09:15:41.560000Z",
+  "credential_source": "organization",
+  "ibm_usage_seconds": 2.315
+}

@@ -1,0 +1,75 @@
+{
+  "description": "A top-up (POST /v1/account/topups 201, GET /v1/account/topups/{topup_id}).\n\n`amount_usd_micro` is the credit asked for (tax, if any, is on top at checkout).\n`checkout_url` is the Stripe-hosted Checkout page (null if auth could not open\none); the balance is credited only when auth has verified the payment, and then\n`status` is `credited` and `credited_at` is set. An abandoned Checkout ends\n`expired`.\n\nrefused: paid, never credited, refunded in full because the billing-address or\ncard country is sanctioned. Terminal.",
+  "properties": {
+    "amount_usd_micro": {
+      "title": "Amount Usd Micro",
+      "type": "integer"
+    },
+    "checkout_url": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Checkout Url"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "credited_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Credited At"
+    },
+    "expires_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Expires At"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "pending",
+        "credited",
+        "expired",
+        "refused"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "status",
+    "amount_usd_micro",
+    "checkout_url",
+    "expires_at",
+    "created_at",
+    "credited_at"
+  ],
+  "title": "TopupOut",
+  "type": "object"
+}

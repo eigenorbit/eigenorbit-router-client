@@ -1,0 +1,125 @@
+{
+  "$defs": {
+    "HistoryEntryOut": {
+      "description": "One event of the caller's router balance (one row per event).\n\n`amount_usd_micro` is signed: top-ups and releases are positive, charges and\ndisputes negative, adjustments either. `status` is set on top-up rows only\n(`pending`, `credited`, `expired` or `refused`; a refused top-up shows the\namount asked for and was never credited). `job_id` names the job of a charge\nor a release, and `topup_id` the top-up of a top-up or a dispute. A settled\njob is one `charge` row (the unused rest of its hold is not a row); a job\nwhose hold was returned in full is one `release` row.",
+      "properties": {
+        "amount_usd_micro": {
+          "title": "Amount Usd Micro",
+          "type": "integer"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "job_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Job Id"
+        },
+        "kind": {
+          "enum": [
+            "topup",
+            "charge",
+            "release",
+            "adjustment",
+            "dispute"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Reason"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "enum": [
+                "pending",
+                "credited",
+                "expired",
+                "refused"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Status"
+        },
+        "topup_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Topup Id"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "amount_usd_micro",
+        "status",
+        "created_at",
+        "job_id",
+        "topup_id",
+        "reason"
+      ],
+      "title": "HistoryEntryOut",
+      "type": "object"
+    }
+  },
+  "description": "GET /v1/account/history response: one page, newest first.\n\n`next_cursor` is an opaque string to pass back as `cursor`, and null on the\nlast page.",
+  "properties": {
+    "entries": {
+      "items": {
+        "$ref": "#/$defs/HistoryEntryOut"
+      },
+      "title": "Entries",
+      "type": "array"
+    },
+    "next_cursor": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Next Cursor"
+    }
+  },
+  "required": [
+    "entries",
+    "next_cursor"
+  ],
+  "title": "HistoryPageOut",
+  "type": "object"
+}

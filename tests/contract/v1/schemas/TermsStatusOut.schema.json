@@ -1,0 +1,54 @@
+{
+  "description": "GET /v1/account/terms response: the caller's acceptance of the router terms.\n\n`accepted` says whether the caller accepted `current_version`, and `accepted_at`\nis when (null when not). `last_accepted_version` is the most recent version the\ncaller ever accepted (null when never), so a client can tell a first acceptance\nfrom a re-acceptance after a new version.",
+  "properties": {
+    "accepted": {
+      "title": "Accepted",
+      "type": "boolean"
+    },
+    "accepted_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Accepted At"
+    },
+    "current_version": {
+      "maxLength": 10,
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "title": "Current Version",
+      "type": "string"
+    },
+    "last_accepted_version": {
+      "anyOf": [
+        {
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Last Accepted Version"
+    },
+    "text_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Text Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "current_version",
+    "text_sha256",
+    "accepted",
+    "accepted_at",
+    "last_accepted_version"
+  ],
+  "title": "TermsStatusOut",
+  "type": "object"
+}

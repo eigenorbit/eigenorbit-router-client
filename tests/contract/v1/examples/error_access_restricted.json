@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "access_restricted",
+    "message": "Access to EigenOrbit Router is restricted to approved accounts",
+    "details": {}
+  }
+}

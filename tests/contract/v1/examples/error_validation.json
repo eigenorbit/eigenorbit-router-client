@@ -1,0 +1,26 @@
+{
+  "error": {
+    "code": "validation_error",
+    "message": "Request validation failed",
+    "details": {
+      "errors": [
+        {
+          "loc": [
+            "body",
+            "method"
+          ],
+          "msg": "Field required",
+          "type": "missing"
+        },
+        {
+          "loc": [
+            "body",
+            "shots"
+          ],
+          "msg": "Input should be greater than or equal to 0",
+          "type": "greater_than_equal"
+        }
+      ]
+    }
+  }
+}

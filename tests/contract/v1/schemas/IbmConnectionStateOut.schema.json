@@ -1,0 +1,110 @@
+{
+  "$defs": {
+    "IbmConnectionOut": {
+      "description": "The user's IBM connection as GET and PUT /v1/account/ibm-connection show it.\n\n`status` is active, or invalid once IBM refused the token or instance while a\njob ran. `token_last4` is the only part of the token ever shown, and the\nCRN is never returned. `backends` are the devices the instance could use when\nit was last checked (`validated_at`).",
+      "properties": {
+        "backends": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Backends",
+          "type": "array"
+        },
+        "instance_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Instance Name"
+        },
+        "plan": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Plan"
+        },
+        "region": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Region"
+        },
+        "status": {
+          "enum": [
+            "active",
+            "invalid"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "token_last4": {
+          "title": "Token Last4",
+          "type": "string"
+        },
+        "validated_at": {
+          "format": "date-time",
+          "title": "Validated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "token_last4",
+        "instance_name",
+        "plan",
+        "region",
+        "validated_at",
+        "backends"
+      ],
+      "title": "IbmConnectionOut",
+      "type": "object"
+    }
+  },
+  "description": "GET and PUT /v1/account/ibm-connection response: always 200, never 404.\n\n`connection` is null when the user has no own connection. `default_source` is\nwhat the user's IBM jobs run on without one: \"organization\" (an IBM account\nEigenOrbit provides, by the user's stored email domain) or \"none\" (IBM jobs\nare refused). `in_flight_jobs` counts the user's own-source jobs in held,\nsubmitting, submitted or running: the jobs a replace or disconnect cancels.",
+  "properties": {
+    "connection": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/IbmConnectionOut"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "default_source": {
+      "enum": [
+        "organization",
+        "none"
+      ],
+      "title": "Default Source",
+      "type": "string"
+    },
+    "in_flight_jobs": {
+      "minimum": 0,
+      "title": "In Flight Jobs",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "connection",
+    "default_source",
+    "in_flight_jobs"
+  ],
+  "title": "IbmConnectionStateOut",
+  "type": "object"
+}

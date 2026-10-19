@@ -1,0 +1,127 @@
+{
+  "$defs": {
+    "ErrorCode": {
+      "enum": [
+        "unauthenticated",
+        "idempotency_key_required",
+        "idempotency_conflict",
+        "protocol_unsupported",
+        "validation_error",
+        "unknown_device",
+        "device_unavailable",
+        "method_not_supported",
+        "batch_not_supported",
+        "circuit_invalid",
+        "shots_invalid",
+        "insufficient_balance",
+        "negative_balance",
+        "job_not_found",
+        "job_not_completed",
+        "job_not_cancellable",
+        "not_found",
+        "method_not_allowed",
+        "not_implemented",
+        "ledger_unavailable",
+        "auth_unavailable",
+        "internal_error",
+        "vendor_rejected",
+        "vendor_failed",
+        "vendor_unavailable",
+        "key_budget_exceeded",
+        "key_revoked",
+        "key_name_taken",
+        "terms_not_accepted",
+        "user_blocked",
+        "concurrency_limit_exceeded",
+        "consent_required",
+        "access_restricted",
+        "region_blocked",
+        "result_expired",
+        "ibm_account_not_connected",
+        "ibm_connection_invalid",
+        "ibm_token_rejected",
+        "ibm_instance_not_found",
+        "ibm_no_devices",
+        "ibm_unreachable",
+        "ibm_validation_unavailable",
+        "ibm_connection_busy",
+        "ibm_credentials_rejected",
+        "ibm_quota_exhausted",
+        "ibm_target_mismatch",
+        "ibm_device_not_on_instance"
+      ],
+      "title": "ErrorCode",
+      "type": "string"
+    },
+    "Method": {
+      "description": "Mirrors kit CompiledCircuit methods.",
+      "enum": [
+        "run",
+        "sample",
+        "probabilities",
+        "zero_state_probability"
+      ],
+      "title": "Method",
+      "type": "string"
+    }
+  },
+  "description": "POST /v1/jobs/estimate response. Creates no job and no hold.\n\nvendor_cost_usd_micro + fee_usd_micro == estimate_usd_micro.",
+  "properties": {
+    "available_usd_micro": {
+      "title": "Available Usd Micro",
+      "type": "integer"
+    },
+    "device": {
+      "title": "Device",
+      "type": "string"
+    },
+    "estimate_usd_micro": {
+      "title": "Estimate Usd Micro",
+      "type": "integer"
+    },
+    "fee_usd_micro": {
+      "minimum": 0,
+      "title": "Fee Usd Micro",
+      "type": "integer"
+    },
+    "method": {
+      "$ref": "#/$defs/Method"
+    },
+    "price_version": {
+      "title": "Price Version",
+      "type": "string"
+    },
+    "shots": {
+      "title": "Shots",
+      "type": "integer"
+    },
+    "vendor_cost_usd_micro": {
+      "minimum": 0,
+      "title": "Vendor Cost Usd Micro",
+      "type": "integer"
+    },
+    "would_reject_reason": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ErrorCode"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "device",
+    "method",
+    "shots",
+    "estimate_usd_micro",
+    "vendor_cost_usd_micro",
+    "fee_usd_micro",
+    "price_version",
+    "available_usd_micro",
+    "would_reject_reason"
+  ],
+  "title": "EstimateOut",
+  "type": "object"
+}

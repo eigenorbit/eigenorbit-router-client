@@ -1,0 +1,20 @@
+{
+  "id": "01a0d3c5-6d70-7894-b00c-bf5998ca19fa",
+  "status": "queued",
+  "billing": "held",
+  "device": "braket/sv1",
+  "method": "run",
+  "shots": 0,
+  "estimate_usd_micro": 90000,
+  "price_version": "braket/sv1@1",
+  "error": null,
+  "actual_cost_usd_micro": null,
+  "vendor_cost_usd_micro": null,
+  "fee_usd_micro": null,
+  "created_at": "2026-09-24T14:12:03.512000Z",
+  "updated_at": "2026-09-24T14:12:03.512000Z",
+  "completed_at": null,
+  "result_expires_at": null,
+  "credential_source": null,
+  "ibm_usage_seconds": null
+}

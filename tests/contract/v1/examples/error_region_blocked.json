@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "region_blocked",
+    "message": "EigenOrbit Router is not available in your region",
+    "details": {}
+  }
+}

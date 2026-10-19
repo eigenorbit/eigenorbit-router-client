@@ -1,0 +1,22 @@
+{
+  "connection": {
+    "status": "active",
+    "token_last4": "x7Qp",
+    "instance_name": "my-research-instance",
+    "plan": "pay-as-you-go",
+    "region": "us-east",
+    "validated_at": "2026-10-03T08:41:17.302000Z",
+    "backends": [
+      "ibm_aachen",
+      "ibm_brisbane",
+      "ibm_fez",
+      "ibm_kingston",
+      "ibm_marrakesh",
+      "ibm_sherbrooke",
+      "ibm_torino",
+      "ibm_strasbourg"
+    ]
+  },
+  "default_source": "organization",
+  "in_flight_jobs": 2
+}

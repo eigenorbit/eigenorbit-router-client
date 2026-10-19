@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "user_blocked",
+    "message": "This EigenOrbit account is blocked",
+    "details": {}
+  }
+}

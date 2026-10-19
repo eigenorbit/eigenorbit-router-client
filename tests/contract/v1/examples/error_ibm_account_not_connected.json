@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "ibm_account_not_connected",
+    "message": "IBM jobs need an IBM Quantum account. Connect yours under IBM account in the router web app.",
+    "details": {
+      "device": "ibm/ibm_fez"
+    }
+  }
+}

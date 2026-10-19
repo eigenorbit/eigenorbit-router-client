@@ -1,0 +1,28 @@
+{
+  "keys": [
+    {
+      "id": "01a0d3c5-6d70-7c45-b821-8e83326f7adb",
+      "name": "laptop",
+      "prefix": "eo_test_EXAMPLEd",
+      "last_four": "doNo",
+      "created_at": "2026-09-24T14:05:44.021000Z",
+      "revoked_at": null,
+      "budget_usd_micro": 10000000,
+      "spent_usd_micro": 1234000,
+      "held_usd_micro": 90000,
+      "last_used_at": "2026-09-29T09:12:00.412000Z"
+    },
+    {
+      "id": "01a0d3c6-1f02-7a19-9c3e-5b1d2e7f4a60",
+      "name": "ci",
+      "prefix": "eo_test_EXAMPLEc",
+      "last_four": "iKey",
+      "created_at": "2026-09-25T08:30:10.500000Z",
+      "revoked_at": "2026-09-28T17:45:02.118000Z",
+      "budget_usd_micro": 5000000,
+      "spent_usd_micro": 377400,
+      "held_usd_micro": 0,
+      "last_used_at": "2026-09-28T17:40:31.006000Z"
+    }
+  ]
+}

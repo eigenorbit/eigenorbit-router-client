@@ -1,0 +1,9 @@
+{
+  "id": "8a4c2e71-3f9b-4d06-b1e5-7c0d9a6f2b48",
+  "status": "refused",
+  "amount_usd_micro": 25000000,
+  "checkout_url": "https://checkout.stripe.com/c/pay/cs_test_b7C8d9E0f1G2h3I4j5K6",
+  "expires_at": "2026-09-30T11:02:47Z",
+  "created_at": "2026-09-30T10:02:47.305Z",
+  "credited_at": null
+}

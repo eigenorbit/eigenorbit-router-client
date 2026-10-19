@@ -1,0 +1,134 @@
+{
+  "$defs": {
+    "ArrayResult": {
+      "description": "A numpy float64 array: `data` nests `len(shape)` levels deep (a bare float for []).",
+      "properties": {
+        "data": {
+          "$ref": "#/$defs/NestedFloats"
+        },
+        "dtype": {
+          "const": "float64",
+          "title": "Dtype",
+          "type": "string"
+        },
+        "kind": {
+          "const": "array",
+          "title": "Kind",
+          "type": "string"
+        },
+        "shape": {
+          "items": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "title": "Shape",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "dtype",
+        "shape",
+        "data"
+      ],
+      "title": "ArrayResult",
+      "type": "object"
+    },
+    "CountsResult": {
+      "description": "Measurement counts keyed by bitstring (qubit 0 is the leftmost character).",
+      "properties": {
+        "data": {
+          "additionalProperties": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "title": "Data",
+          "type": "object"
+        },
+        "kind": {
+          "const": "counts",
+          "title": "Kind",
+          "type": "string"
+        },
+        "n_qubits": {
+          "minimum": 1,
+          "title": "N Qubits",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "n_qubits",
+        "data"
+      ],
+      "title": "CountsResult",
+      "type": "object"
+    },
+    "Method": {
+      "description": "Mirrors kit CompiledCircuit methods.",
+      "enum": [
+        "run",
+        "sample",
+        "probabilities",
+        "zero_state_probability"
+      ],
+      "title": "Method",
+      "type": "string"
+    },
+    "NestedFloats": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "items": {
+            "$ref": "#/$defs/NestedFloats"
+          },
+          "type": "array"
+        }
+      ]
+    }
+  },
+  "description": "GET /v1/jobs/{job_id}/result. Returned as soon as status is completed.\n\nShapes by method: run -> [n_observables]; zero_state_probability -> [];\nprobabilities -> [2**n_qubits]; sample -> counts.",
+  "properties": {
+    "bit_order": {
+      "const": "qubit0_msb",
+      "title": "Bit Order",
+      "type": "string"
+    },
+    "job_id": {
+      "format": "uuid",
+      "title": "Job Id",
+      "type": "string"
+    },
+    "method": {
+      "$ref": "#/$defs/Method"
+    },
+    "result": {
+      "discriminator": {
+        "mapping": {
+          "array": "#/$defs/ArrayResult",
+          "counts": "#/$defs/CountsResult"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ArrayResult"
+        },
+        {
+          "$ref": "#/$defs/CountsResult"
+        }
+      ],
+      "title": "Result"
+    }
+  },
+  "required": [
+    "job_id",
+    "method",
+    "bit_order",
+    "result"
+  ],
+  "title": "JobResultOut",
+  "type": "object"
+}

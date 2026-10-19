@@ -1,0 +1,94 @@
+[project]
+name = "eigenorbit-router-client"
+version = "0.0.0"
+description = "Run eigenkit circuits on real quantum hardware through EigenOrbit Router."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [
+    { name = "EigenOrbit", email = "support@eigenorbit.com" }
+]
+requires-python = ">=3.12,<3.15"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Typing :: Typed",
+]
+dependencies = [
+    # The client uses eigenkit internals, so a new eigenkit major must not
+    # install under it.
+    "eigenkit>=1.0.1,<2",
+    "httpx>=0.28,<1",
+    "numpy>=2.4,<3",
+]
+
+[project.urls]
+Homepage = "https://eigenorbit.com"
+Repository = "https://github.com/eigenorbit/eigenorbit-router-client"
+Issues = "https://github.com/eigenorbit/eigenorbit-router-client/issues"
+Changelog = "https://github.com/eigenorbit/eigenorbit-router-client/blob/main/CHANGELOG.md"
+
+[dependency-groups]
+dev = [
+    "jsonschema>=4.26,<5",
+    "pytest==9.1.1",
+    "python-semantic-release>=10.7.0",
+    "ruff",
+    # scikit-learn, for the estimator-level secret test (a saved QSVC).
+    # The eigenkit version the router worker runs.
+    "eigenkit[datasets]==1.0.1",
+]
+# scripts/live_parity.py only: the own-credentials Braket and IBM legs. Not part
+# of dev, so CI never installs the AWS SDK or qiskit. Run it with
+# `uv run --group live`.
+live = [
+    "eigenkit[braket,qiskit]==1.0.1",
+]
+
+[build-system]
+# 1.27 is the first hatchling that reads the PEP 639 `license` expression.
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["eigenorbit_router_client"]
+
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+allow_zero_version = true   # without it the first feat release is 1.0.0
+major_on_zero = false       # the first feat release is 0.1.0
+assets = ["uv.lock"]
+build_command = """
+    uv lock --upgrade-package "$PACKAGE_NAME"
+    uv build
+"""
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 90
+src = [".", "tests"]
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["B", "C90", "E", "F", "W", "I"]
+ignore = ["E203", "E501", "E722", "E731", "B905", "C901"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 12
+
+[tool.ruff.lint.isort]
+known-first-party = ["eigenorbit_router_client"]
+lines-after-imports = 2
+
+[tool.ruff.lint.per-file-ignores]
+"**/__init__.py" = ["F401"]

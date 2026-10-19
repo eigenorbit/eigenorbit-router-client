@@ -1,0 +1,73 @@
+{
+  "description": "The user's IBM connection as GET and PUT /v1/account/ibm-connection show it.\n\n`status` is active, or invalid once IBM refused the token or instance while a\njob ran. `token_last4` is the only part of the token ever shown, and the\nCRN is never returned. `backends` are the devices the instance could use when\nit was last checked (`validated_at`).",
+  "properties": {
+    "backends": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Backends",
+      "type": "array"
+    },
+    "instance_name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Instance Name"
+    },
+    "plan": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Plan"
+    },
+    "region": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Region"
+    },
+    "status": {
+      "enum": [
+        "active",
+        "invalid"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "token_last4": {
+      "title": "Token Last4",
+      "type": "string"
+    },
+    "validated_at": {
+      "format": "date-time",
+      "title": "Validated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "status",
+    "token_last4",
+    "instance_name",
+    "plan",
+    "region",
+    "validated_at",
+    "backends"
+  ],
+  "title": "IbmConnectionOut",
+  "type": "object"
+}

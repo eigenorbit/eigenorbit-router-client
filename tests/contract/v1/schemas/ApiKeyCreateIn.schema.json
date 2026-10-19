@@ -1,0 +1,31 @@
+{
+  "additionalProperties": false,
+  "description": "POST /v1/keys body. `budget_usd_micro` is optional (null or absent = no limit).",
+  "properties": {
+    "budget_usd_micro": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "maximum": 9223372036854775807,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Budget Usd Micro"
+    },
+    "name": {
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "title": "ApiKeyCreateIn",
+  "type": "object"
+}

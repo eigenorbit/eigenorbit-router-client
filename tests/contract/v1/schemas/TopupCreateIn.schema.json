@@ -1,0 +1,15 @@
+{
+  "additionalProperties": false,
+  "description": "POST /v1/account/topups body: a strict JSON integer of whole dollars.\n\nNo field names a Stripe price: auth builds the Checkout line item from the\namount. Sent with an `Idempotency-Key` header, which auth keys the top-up on.",
+  "properties": {
+    "amount_usd": {
+      "title": "Amount Usd",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "amount_usd"
+  ],
+  "title": "TopupCreateIn",
+  "type": "object"
+}

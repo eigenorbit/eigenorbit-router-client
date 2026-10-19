@@ -1,0 +1,12 @@
+{
+  "error": {
+    "code": "key_budget_exceeded",
+    "message": "This API key's budget does not cover the job. Raise or remove the key's budget in the router web app.",
+    "details": {
+      "budget_usd_micro": 1000000,
+      "spent_usd_micro": 850000,
+      "held_usd_micro": 90000,
+      "estimate_usd_micro": 90000
+    }
+  }
+}

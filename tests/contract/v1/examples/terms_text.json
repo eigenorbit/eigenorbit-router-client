@@ -1,0 +1,6 @@
+{
+  "version": "2026-10-16",
+  "text_sha256": "64ad567a30da0db4878a2eb23f52dba46859fb2b0be6d0cde9103345de83f9ed",
+  "markdown": "> DRAFT — pending legal review\n\n# EigenOrbit Router terms\n\n**Version:** 2026-10-16\n\n## 1. The service\n\nThe Router runs quantum circuits for you on third-party hardware through Amazon Braket.\n",
+  "is_current": true
+}

@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "ibm_connection_busy",
+    "message": "Another change to your IBM account is in progress, or there were too many attempts. Try again shortly.",
+    "details": {
+      "retry_after_seconds": 30
+    }
+  }
+}

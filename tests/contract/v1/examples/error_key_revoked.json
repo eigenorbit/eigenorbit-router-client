@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "key_revoked",
+    "message": "This API key is revoked and cannot be changed",
+    "details": {
+      "revoked_at": "2026-09-28T17:45:02.118000Z"
+    }
+  }
+}

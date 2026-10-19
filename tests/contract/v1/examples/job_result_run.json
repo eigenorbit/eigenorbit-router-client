@@ -1,0 +1,15 @@
+{
+  "job_id": "01a0d3c5-6d70-7894-b00c-bf5998ca19fa",
+  "method": "run",
+  "bit_order": "qubit0_msb",
+  "result": {
+    "kind": "array",
+    "dtype": "float64",
+    "shape": [
+      1
+    ],
+    "data": [
+      0.8775825618903728
+    ]
+  }
+}

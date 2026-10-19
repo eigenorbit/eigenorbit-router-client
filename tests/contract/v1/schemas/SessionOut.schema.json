@@ -1,0 +1,75 @@
+{
+  "$defs": {
+    "SessionUserOut": {
+      "description": "The signed-in user, as auth's token exchange reports them.\n\nOnly these four fields come from auth's exchange body; its consent and\nacademic fields never reach the browser.",
+      "properties": {
+        "email": {
+          "title": "Email",
+          "type": "string"
+        },
+        "first_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "First Name"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "last_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Last Name"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "first_name",
+        "last_name"
+      ],
+      "title": "SessionUserOut",
+      "type": "object"
+    }
+  },
+  "description": "POST /v1/account/session 200 response (Cache-Control: no-store).\n\n`access_token` is the short-lived JWT auth minted for audience \"router\" in\nexchange for the caller's SSO session cookie. The router has already verified it\nthrough the same JWKS path as /v1/keys. The SPA keeps it in memory only, sends it\nas `Authorization: Bearer`, and exchanges again on a 401 or before `expires_in`\nseconds have passed.",
+  "properties": {
+    "access_token": {
+      "title": "Access Token",
+      "type": "string"
+    },
+    "expires_in": {
+      "title": "Expires In",
+      "type": "integer"
+    },
+    "token_type": {
+      "const": "Bearer",
+      "title": "Token Type",
+      "type": "string"
+    },
+    "user": {
+      "$ref": "#/$defs/SessionUserOut"
+    }
+  },
+  "required": [
+    "access_token",
+    "token_type",
+    "expires_in",
+    "user"
+  ],
+  "title": "SessionOut",
+  "type": "object"
+}

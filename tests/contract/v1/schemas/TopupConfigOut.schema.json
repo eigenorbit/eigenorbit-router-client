@@ -1,0 +1,33 @@
+{
+  "description": "GET /v1/account/topup-config response: the top-up range and presets.\n\nWhole US dollars. Auth serves and enforces the same values, so a client offers\n`presets_usd` and accepts any whole-dollar amount in `min_usd..max_usd`.",
+  "properties": {
+    "currency": {
+      "const": "usd",
+      "title": "Currency",
+      "type": "string"
+    },
+    "max_usd": {
+      "title": "Max Usd",
+      "type": "integer"
+    },
+    "min_usd": {
+      "title": "Min Usd",
+      "type": "integer"
+    },
+    "presets_usd": {
+      "items": {
+        "type": "integer"
+      },
+      "title": "Presets Usd",
+      "type": "array"
+    }
+  },
+  "required": [
+    "min_usd",
+    "max_usd",
+    "presets_usd",
+    "currency"
+  ],
+  "title": "TopupConfigOut",
+  "type": "object"
+}

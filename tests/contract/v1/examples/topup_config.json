@@ -1,0 +1,6 @@
+{
+  "min_usd": 5,
+  "max_usd": 1000,
+  "presets_usd": [10, 25, 50, 100],
+  "currency": "usd"
+}

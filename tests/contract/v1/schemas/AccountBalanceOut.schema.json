@@ -1,0 +1,24 @@
+{
+  "description": "GET /v1/account/balance response: the caller's router USD balance.\n\nRelayed from auth's ledger. `held_usd_micro` is the sum of active holds, and\n`available_usd_micro` is balance minus held. The balance may be negative.",
+  "properties": {
+    "available_usd_micro": {
+      "title": "Available Usd Micro",
+      "type": "integer"
+    },
+    "balance_usd_micro": {
+      "title": "Balance Usd Micro",
+      "type": "integer"
+    },
+    "held_usd_micro": {
+      "title": "Held Usd Micro",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "balance_usd_micro",
+    "held_usd_micro",
+    "available_usd_micro"
+  ],
+  "title": "AccountBalanceOut",
+  "type": "object"
+}

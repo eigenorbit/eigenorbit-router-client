@@ -1,0 +1,103 @@
+{
+  "$defs": {
+    "ApiKeyOut": {
+      "description": "An API key as listed. The secret and its hash are never returned.\n\nThe account fields are additive and optional: `revoked_at` is\nnull for an active key; `budget_usd_micro` is the lifetime budget (null = no\nlimit); `spent_usd_micro` the settled spend since creation; `held_usd_micro`\nthe estimates of the key's jobs in flight; `last_used_at` the last use,\nprecise to a minute.",
+      "properties": {
+        "budget_usd_micro": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Budget Usd Micro"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "held_usd_micro": {
+          "default": 0,
+          "title": "Held Usd Micro",
+          "type": "integer"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "last_four": {
+          "title": "Last Four",
+          "type": "string"
+        },
+        "last_used_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Used At"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "prefix": {
+          "title": "Prefix",
+          "type": "string"
+        },
+        "revoked_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Revoked At"
+        },
+        "spent_usd_micro": {
+          "default": 0,
+          "title": "Spent Usd Micro",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "prefix",
+        "last_four",
+        "created_at"
+      ],
+      "title": "ApiKeyOut",
+      "type": "object"
+    }
+  },
+  "description": "GET /v1/keys response: the caller's keys.",
+  "properties": {
+    "keys": {
+      "items": {
+        "$ref": "#/$defs/ApiKeyOut"
+      },
+      "title": "Keys",
+      "type": "array"
+    }
+  },
+  "required": [
+    "keys"
+  ],
+  "title": "ApiKeyListOut",
+  "type": "object"
+}

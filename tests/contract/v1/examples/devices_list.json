@@ -1,0 +1,126 @@
+{
+  "devices": [
+    {
+      "id": "braket/iqm_garnet",
+      "vendor": "braket",
+      "name": "IQM Garnet",
+      "kind": "qpu",
+      "qubits": 20,
+      "status": "online",
+      "status_updated_at": "2026-09-28T15:05:15Z",
+      "available_now": true,
+      "availability_windows": [
+        {
+          "day": "Weekdays",
+          "start_utc": "00:00:00",
+          "end_utc": "07:59:59"
+        },
+        {
+          "day": "Weekdays",
+          "start_utc": "09:00:00",
+          "end_utc": "23:59:59"
+        },
+        {
+          "day": "Weekend",
+          "start_utc": "22:00:00",
+          "end_utc": "06:00:00"
+        }
+      ],
+      "methods": [
+        {
+          "method": "probabilities",
+          "min_shots": 1,
+          "max_shots": 20000
+        },
+        {
+          "method": "run",
+          "min_shots": 1,
+          "max_shots": 20000
+        },
+        {
+          "method": "sample",
+          "min_shots": 1,
+          "max_shots": 20000
+        },
+        {
+          "method": "zero_state_probability",
+          "min_shots": 1,
+          "max_shots": 20000
+        }
+      ],
+      "price": {
+        "price_version": "braket/iqm_garnet@1",
+        "pricing_model": "task_plus_shot",
+        "markup_bps": 2000,
+        "task_fee_usd_micro": 300000,
+        "per_shot_usd_micro": 1450,
+        "per_minute_usd_micro": null,
+        "min_billable_ms": null,
+        "hold_seconds": null
+      },
+      "example_price": {
+        "shots": 1000,
+        "billed_duration_ms": null,
+        "vendor_cost_usd_micro": 1750000,
+        "fee_usd_micro": 350000,
+        "total_usd_micro": 2100000
+      }
+    },
+    {
+      "id": "braket/sv1",
+      "vendor": "braket",
+      "name": "Amazon Braket SV1",
+      "kind": "simulator",
+      "qubits": 34,
+      "status": "online",
+      "status_updated_at": "2026-09-28T15:05:15Z",
+      "available_now": true,
+      "availability_windows": [
+        {
+          "day": "Everyday",
+          "start_utc": "00:00:00",
+          "end_utc": "23:59:59"
+        }
+      ],
+      "methods": [
+        {
+          "method": "probabilities",
+          "min_shots": 0,
+          "max_shots": 100000
+        },
+        {
+          "method": "run",
+          "min_shots": 0,
+          "max_shots": 100000
+        },
+        {
+          "method": "sample",
+          "min_shots": 1,
+          "max_shots": 100000
+        },
+        {
+          "method": "zero_state_probability",
+          "min_shots": 0,
+          "max_shots": 100000
+        }
+      ],
+      "price": {
+        "price_version": "braket/sv1@1",
+        "pricing_model": "duration_per_minute",
+        "markup_bps": 2000,
+        "task_fee_usd_micro": null,
+        "per_shot_usd_micro": null,
+        "per_minute_usd_micro": 75000,
+        "min_billable_ms": 3000,
+        "hold_seconds": 60
+      },
+      "example_price": {
+        "shots": 1000,
+        "billed_duration_ms": 3000,
+        "vendor_cost_usd_micro": 3750,
+        "fee_usd_micro": 750,
+        "total_usd_micro": 4500
+      }
+    }
+  ]
+}

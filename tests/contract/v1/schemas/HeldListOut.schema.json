@@ -1,0 +1,78 @@
+{
+  "$defs": {
+    "HeldJobOut": {
+      "description": "One of the caller's jobs whose funds are held: `amount_usd_micro` is its hold.",
+      "properties": {
+        "amount_usd_micro": {
+          "minimum": 0,
+          "title": "Amount Usd Micro",
+          "type": "integer"
+        },
+        "device": {
+          "title": "Device",
+          "type": "string"
+        },
+        "job_id": {
+          "format": "uuid",
+          "title": "Job Id",
+          "type": "string"
+        },
+        "method": {
+          "$ref": "#/$defs/Method"
+        },
+        "shots": {
+          "minimum": 0,
+          "title": "Shots",
+          "type": "integer"
+        },
+        "since": {
+          "format": "date-time",
+          "title": "Since",
+          "type": "string"
+        }
+      },
+      "required": [
+        "job_id",
+        "device",
+        "method",
+        "shots",
+        "amount_usd_micro",
+        "since"
+      ],
+      "title": "HeldJobOut",
+      "type": "object"
+    },
+    "Method": {
+      "description": "Mirrors kit CompiledCircuit methods.",
+      "enum": [
+        "run",
+        "sample",
+        "probabilities",
+        "zero_state_probability"
+      ],
+      "title": "Method",
+      "type": "string"
+    }
+  },
+  "description": "GET /v1/account/holds response: the caller's held jobs, oldest first, and the\nsum of their holds.",
+  "properties": {
+    "holds": {
+      "items": {
+        "$ref": "#/$defs/HeldJobOut"
+      },
+      "title": "Holds",
+      "type": "array"
+    },
+    "total_usd_micro": {
+      "minimum": 0,
+      "title": "Total Usd Micro",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "holds",
+    "total_usd_micro"
+  ],
+  "title": "HeldListOut",
+  "type": "object"
+}

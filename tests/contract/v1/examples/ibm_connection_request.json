@@ -1,0 +1,4 @@
+{
+  "token": "<your IBM Quantum API key>",
+  "crn": "crn:v1:bluemix:public:quantum-computing:us-east:a/00000000000000000000000000000000:00000000-0000-0000-0000-000000000000::"
+}

@@ -1,0 +1,352 @@
+{
+  "$defs": {
+    "AccountJobKeyOut": {
+      "description": "The API key a job was submitted with. `revoked` is true once the key is revoked.",
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "revoked": {
+          "title": "Revoked",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "revoked"
+      ],
+      "title": "AccountJobKeyOut",
+      "type": "object"
+    },
+    "AccountJobOut": {
+      "description": "A job as the router web app sees it: every `JobOut` field plus its key.\n\nLike `JobOut`, it never carries the vendor's task id or the router's internal\njob state.",
+      "properties": {
+        "actual_cost_usd_micro": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Actual Cost Usd Micro"
+        },
+        "billing": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BillingStatus"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "completed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Completed At"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "credential_source": {
+          "anyOf": [
+            {
+              "enum": [
+                "own",
+                "organization"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Credential Source"
+        },
+        "device": {
+          "title": "Device",
+          "type": "string"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/JobError"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "estimate_usd_micro": {
+          "minimum": 0,
+          "title": "Estimate Usd Micro",
+          "type": "integer"
+        },
+        "fee_usd_micro": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Fee Usd Micro"
+        },
+        "ibm_usage_seconds": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ibm Usage Seconds"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "key": {
+          "$ref": "#/$defs/AccountJobKeyOut"
+        },
+        "method": {
+          "$ref": "#/$defs/Method"
+        },
+        "price_version": {
+          "title": "Price Version",
+          "type": "string"
+        },
+        "result_expires_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Result Expires At"
+        },
+        "shots": {
+          "minimum": 0,
+          "title": "Shots",
+          "type": "integer"
+        },
+        "status": {
+          "$ref": "#/$defs/JobStatus"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        },
+        "vendor_cost_usd_micro": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Vendor Cost Usd Micro"
+        }
+      },
+      "required": [
+        "id",
+        "status",
+        "billing",
+        "device",
+        "method",
+        "shots",
+        "estimate_usd_micro",
+        "actual_cost_usd_micro",
+        "vendor_cost_usd_micro",
+        "fee_usd_micro",
+        "price_version",
+        "error",
+        "created_at",
+        "updated_at",
+        "completed_at",
+        "key"
+      ],
+      "title": "AccountJobOut",
+      "type": "object"
+    },
+    "BillingStatus": {
+      "description": "Public billing vocabulary; null on a job means no hold was placed.",
+      "enum": [
+        "held",
+        "settled",
+        "released"
+      ],
+      "title": "BillingStatus",
+      "type": "string"
+    },
+    "ErrorCategory": {
+      "description": "Who or what stopped a job. Four fixed ASCII literals.",
+      "enum": [
+        "rejected",
+        "circuit",
+        "vendor",
+        "internal"
+      ],
+      "title": "ErrorCategory",
+      "type": "string"
+    },
+    "ErrorCode": {
+      "enum": [
+        "unauthenticated",
+        "idempotency_key_required",
+        "idempotency_conflict",
+        "protocol_unsupported",
+        "validation_error",
+        "unknown_device",
+        "device_unavailable",
+        "method_not_supported",
+        "batch_not_supported",
+        "circuit_invalid",
+        "shots_invalid",
+        "insufficient_balance",
+        "negative_balance",
+        "job_not_found",
+        "job_not_completed",
+        "job_not_cancellable",
+        "not_found",
+        "method_not_allowed",
+        "not_implemented",
+        "ledger_unavailable",
+        "auth_unavailable",
+        "internal_error",
+        "vendor_rejected",
+        "vendor_failed",
+        "vendor_unavailable",
+        "key_budget_exceeded",
+        "key_revoked",
+        "key_name_taken",
+        "terms_not_accepted",
+        "user_blocked",
+        "concurrency_limit_exceeded",
+        "consent_required",
+        "access_restricted",
+        "region_blocked",
+        "result_expired",
+        "ibm_account_not_connected",
+        "ibm_connection_invalid",
+        "ibm_token_rejected",
+        "ibm_instance_not_found",
+        "ibm_no_devices",
+        "ibm_unreachable",
+        "ibm_validation_unavailable",
+        "ibm_connection_busy",
+        "ibm_credentials_rejected",
+        "ibm_quota_exhausted",
+        "ibm_target_mismatch",
+        "ibm_device_not_on_instance"
+      ],
+      "title": "ErrorCode",
+      "type": "string"
+    },
+    "JobError": {
+      "description": "Why a job failed or was rejected. `code` is always one of the job error codes.\n\n`category` says who or what stopped the job: `rejected` (an admission\nrule), `circuit` (the user's circuit or job parameters), `vendor` or\n`internal`. It always agrees with `code` (app.contract.errors.category_for).",
+      "properties": {
+        "category": {
+          "$ref": "#/$defs/ErrorCategory"
+        },
+        "code": {
+          "$ref": "#/$defs/ErrorCode"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "category"
+      ],
+      "title": "JobError",
+      "type": "object"
+    },
+    "JobStatus": {
+      "description": "Public job status vocabulary.",
+      "enum": [
+        "queued",
+        "running",
+        "completed",
+        "failed",
+        "cancelled",
+        "rejected"
+      ],
+      "title": "JobStatus",
+      "type": "string"
+    },
+    "Method": {
+      "description": "Mirrors kit CompiledCircuit methods.",
+      "enum": [
+        "run",
+        "sample",
+        "probabilities",
+        "zero_state_probability"
+      ],
+      "title": "Method",
+      "type": "string"
+    }
+  },
+  "description": "GET /v1/account/jobs response: one page of the caller's jobs, newest first.\n\n`next_cursor` is an opaque string to pass back as `cursor` for the next page,\nand null on the last page.",
+  "properties": {
+    "jobs": {
+      "items": {
+        "$ref": "#/$defs/AccountJobOut"
+      },
+      "title": "Jobs",
+      "type": "array"
+    },
+    "next_cursor": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Next Cursor"
+    }
+  },
+  "required": [
+    "jobs",
+    "next_cursor"
+  ],
+  "title": "AccountJobPageOut",
+  "type": "object"
+}

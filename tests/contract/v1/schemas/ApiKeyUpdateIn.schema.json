@@ -1,0 +1,29 @@
+{
+  "additionalProperties": false,
+  "description": "PATCH /v1/keys/{key_id} body: at least one field.\n\nTri-state budget: an absent `budget_usd_micro` leaves it unchanged, an\nexplicit null removes it, an integer > 0 sets it. `name` cannot be null.",
+  "properties": {
+    "budget_usd_micro": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "maximum": 9223372036854775807,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Budget Usd Micro"
+    },
+    "name": {
+      "default": null,
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    }
+  },
+  "title": "ApiKeyUpdateIn",
+  "type": "object"
+}

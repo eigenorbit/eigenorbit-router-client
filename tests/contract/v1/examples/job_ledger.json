@@ -1,0 +1,23 @@
+{
+  "job_id": "01926b0b-55c1-7d20-9e8f-7a6b5c4d3e2f",
+  "entries": [
+    {
+      "kind": "hold",
+      "amount_usd_micro": 15000,
+      "created_at": "2026-09-29T11:47:55Z",
+      "reason": "hold"
+    },
+    {
+      "kind": "charge",
+      "amount_usd_micro": -4500,
+      "created_at": "2026-09-29T11:48:02Z",
+      "reason": "settle"
+    },
+    {
+      "kind": "release",
+      "amount_usd_micro": 10500,
+      "created_at": "2026-09-29T11:48:02Z",
+      "reason": "settle_remainder"
+    }
+  ]
+}

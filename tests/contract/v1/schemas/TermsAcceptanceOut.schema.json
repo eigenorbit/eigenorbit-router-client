@@ -1,0 +1,28 @@
+{
+  "description": "POST /v1/account/terms/accept 200 response: the recorded acceptance.\n\nAccepting the same version again answers the same body: `accepted_at` is the\nfirst acceptance's time.",
+  "properties": {
+    "accepted_at": {
+      "format": "date-time",
+      "title": "Accepted At",
+      "type": "string"
+    },
+    "text_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Text Sha256",
+      "type": "string"
+    },
+    "version": {
+      "maxLength": 10,
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "version",
+    "text_sha256",
+    "accepted_at"
+  ],
+  "title": "TermsAcceptanceOut",
+  "type": "object"
+}

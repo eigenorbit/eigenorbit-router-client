@@ -1,0 +1,29 @@
+{
+  "additionalProperties": false,
+  "description": "POST /v1/account/terms/accept body: both representations, for the current version.",
+  "properties": {
+    "accept_export_representation": {
+      "const": true,
+      "title": "Accept Export Representation",
+      "type": "boolean"
+    },
+    "accept_terms": {
+      "const": true,
+      "title": "Accept Terms",
+      "type": "boolean"
+    },
+    "version": {
+      "maxLength": 10,
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "version",
+    "accept_terms",
+    "accept_export_representation"
+  ],
+  "title": "TermsAcceptIn",
+  "type": "object"
+}

@@ -1,0 +1,98 @@
+{
+  "$defs": {
+    "Method": {
+      "description": "Mirrors kit CompiledCircuit methods.",
+      "enum": [
+        "run",
+        "sample",
+        "probabilities",
+        "zero_state_probability"
+      ],
+      "title": "Method",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Body of both POST /v1/jobs/estimate and POST /v1/jobs.\n\ncircuit_spec is kit's circuit_spec_to_json output (n_qubits, n_weights,\nn_inputs, gates); observables is kit's observables_to_json output. The\nschema accepts 2-D weights/inputs, but Braket devices reject them with\nbatch_not_supported.",
+  "properties": {
+    "circuit_spec": {
+      "additionalProperties": true,
+      "title": "Circuit Spec",
+      "type": "object"
+    },
+    "device": {
+      "maxLength": 64,
+      "pattern": "^[a-z0-9]+/[a-z0-9_-]+$",
+      "title": "Device",
+      "type": "string"
+    },
+    "inputs": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        {
+          "items": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "type": "array"
+        }
+      ],
+      "title": "Inputs"
+    },
+    "method": {
+      "$ref": "#/$defs/Method"
+    },
+    "observables": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "minItems": 1,
+      "title": "Observables",
+      "type": "array"
+    },
+    "shots": {
+      "minimum": 0,
+      "title": "Shots",
+      "type": "integer"
+    },
+    "weights": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        {
+          "items": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "type": "array"
+        }
+      ],
+      "title": "Weights"
+    }
+  },
+  "required": [
+    "device",
+    "method",
+    "shots",
+    "circuit_spec",
+    "observables",
+    "weights",
+    "inputs"
+  ],
+  "title": "JobRequest",
+  "type": "object"
+}

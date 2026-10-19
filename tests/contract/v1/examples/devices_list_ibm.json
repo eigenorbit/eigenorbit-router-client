@@ -1,0 +1,99 @@
+{
+  "devices": [
+    {
+      "id": "braket/sv1",
+      "vendor": "braket",
+      "name": "Amazon Braket SV1",
+      "kind": "simulator",
+      "qubits": 34,
+      "status": "online",
+      "status_updated_at": "2026-10-03T08:05:00Z",
+      "available_now": null,
+      "availability_windows": [],
+      "methods": [
+        {
+          "method": "probabilities",
+          "min_shots": 0,
+          "max_shots": 100000
+        },
+        {
+          "method": "run",
+          "min_shots": 0,
+          "max_shots": 100000
+        },
+        {
+          "method": "sample",
+          "min_shots": 1,
+          "max_shots": 100000
+        },
+        {
+          "method": "zero_state_probability",
+          "min_shots": 0,
+          "max_shots": 100000
+        }
+      ],
+      "price": {
+        "price_version": "braket/sv1@1",
+        "pricing_model": "duration_per_minute",
+        "markup_bps": 2000,
+        "task_fee_usd_micro": null,
+        "per_shot_usd_micro": null,
+        "per_minute_usd_micro": 75000,
+        "min_billable_ms": 3000,
+        "hold_seconds": 60
+      },
+      "example_price": {
+        "shots": 1000,
+        "billed_duration_ms": 3000,
+        "vendor_cost_usd_micro": 3750,
+        "fee_usd_micro": 750,
+        "total_usd_micro": 4500
+      }
+    },
+    {
+      "id": "ibm/ibm_fez",
+      "vendor": "ibm",
+      "name": "IBM Fez",
+      "kind": "qpu",
+      "qubits": 156,
+      "status": "online",
+      "status_updated_at": "2026-10-03T08:05:00Z",
+      "available_now": null,
+      "availability_windows": [],
+      "methods": [
+        {
+          "method": "probabilities",
+          "min_shots": 1,
+          "max_shots": 100000
+        },
+        {
+          "method": "run",
+          "min_shots": 1,
+          "max_shots": 100000
+        },
+        {
+          "method": "sample",
+          "min_shots": 1,
+          "max_shots": 100000
+        }
+      ],
+      "price": {
+        "price_version": "ibm/ibm_fez@1",
+        "pricing_model": "task_plus_shot",
+        "markup_bps": 0,
+        "task_fee_usd_micro": 0,
+        "per_shot_usd_micro": 0,
+        "per_minute_usd_micro": null,
+        "min_billable_ms": null,
+        "hold_seconds": null
+      },
+      "example_price": {
+        "shots": 1000,
+        "billed_duration_ms": null,
+        "vendor_cost_usd_micro": 0,
+        "fee_usd_micro": 0,
+        "total_usd_micro": 0
+      }
+    }
+  ]
+}

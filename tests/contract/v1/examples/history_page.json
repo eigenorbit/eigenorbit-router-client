@@ -1,0 +1,65 @@
+{
+  "entries": [
+    {
+      "id": "01926b3e-9a41-7c2e-8d15-4f0a6b7c8d91",
+      "kind": "adjustment",
+      "amount_usd_micro": 2000000,
+      "status": null,
+      "created_at": "2026-09-29T16:40:00Z",
+      "job_id": null,
+      "topup_id": null,
+      "reason": "Goodwill credit for the 2026-09-28 queue outage"
+    },
+    {
+      "id": "01926b3a-1f07-7a58-9e4b-2c61d0e3f4a7",
+      "kind": "dispute",
+      "amount_usd_micro": -10000000,
+      "status": null,
+      "created_at": "2026-09-29T15:12:30Z",
+      "job_id": null,
+      "topup_id": "7d0f3c2a-5b1e-4e8f-9a6d-3c2b1a0f9e8d",
+      "reason": "stripe_dispute"
+    },
+    {
+      "id": "01926b21-c4d9-7f13-b8a2-6e5d4c3b2a19",
+      "kind": "release",
+      "amount_usd_micro": 377400,
+      "status": null,
+      "created_at": "2026-09-29T13:05:11Z",
+      "job_id": "01926b1f-02aa-7c44-a1b3-9f8e7d6c5b4a",
+      "topup_id": null,
+      "reason": "no_vendor_charge"
+    },
+    {
+      "id": "01926b0c-7e31-7b92-8c47-1d2e3f4a5b6c",
+      "kind": "charge",
+      "amount_usd_micro": -4500,
+      "status": null,
+      "created_at": "2026-09-29T11:48:02Z",
+      "job_id": "01926b0b-55c1-7d20-9e8f-7a6b5c4d3e2f",
+      "topup_id": null,
+      "reason": "settle"
+    },
+    {
+      "id": "2f6e8a1c-3d4b-4c5e-8f9a-0b1c2d3e4f5a",
+      "kind": "topup",
+      "amount_usd_micro": 50000000,
+      "status": "pending",
+      "created_at": "2026-09-29T10:30:45Z",
+      "job_id": null,
+      "topup_id": "2f6e8a1c-3d4b-4c5e-8f9a-0b1c2d3e4f5a",
+      "reason": null
+    },
+    {
+      "id": "01926a8f-2b6d-7e01-a3c5-8d9e0f1a2b3c",
+      "kind": "topup",
+      "amount_usd_micro": 25000000,
+      "status": "credited",
+      "created_at": "2026-09-28T09:15:00Z",
+      "job_id": null,
+      "topup_id": "7d0f3c2a-5b1e-4e8f-9a6d-3c2b1a0f9e8d",
+      "reason": "stripe_topup"
+    }
+  ],
+  "next_cursor": "WyIyMDI2LTA5LTI4VDA5OjE1OjAwKzAwOjAwIiwiMDE5MjZhOGYtMmI2ZC03ZTAxLWEzYzUtOGQ5ZTBmMWEyYjNjIl0"
+}

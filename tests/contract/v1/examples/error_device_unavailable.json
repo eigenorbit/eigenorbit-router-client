@@ -1,0 +1,10 @@
+{
+  "error": {
+    "code": "device_unavailable",
+    "message": "braket/ionq_forte_1 is offline at the vendor; try again later",
+    "details": {
+      "device": "braket/ionq_forte_1",
+      "status": "offline"
+    }
+  }
+}

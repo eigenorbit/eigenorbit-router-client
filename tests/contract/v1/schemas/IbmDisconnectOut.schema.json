@@ -1,0 +1,15 @@
+{
+  "description": "DELETE /v1/account/ibm-connection response: how many own-source jobs it cancelled.\n\nIdempotent: with no connection it answers 0.",
+  "properties": {
+    "cancelled_jobs": {
+      "minimum": 0,
+      "title": "Cancelled Jobs",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "cancelled_jobs"
+  ],
+  "title": "IbmDisconnectOut",
+  "type": "object"
+}

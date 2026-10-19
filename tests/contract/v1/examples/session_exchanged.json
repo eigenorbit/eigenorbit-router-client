@@ -1,0 +1,11 @@
+{
+  "access_token": "eyJhbGciOiJFZERTQSJ9.example.signature",
+  "token_type": "Bearer",
+  "expires_in": 300,
+  "user": {
+    "id": "0192f0c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f",
+    "email": "ada@example.com",
+    "first_name": "Ada",
+    "last_name": "Lovelace"
+  }
+}

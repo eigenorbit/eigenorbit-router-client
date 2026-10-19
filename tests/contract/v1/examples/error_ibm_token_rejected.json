@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "ibm_token_rejected",
+    "message": "IBM did not accept this API token. Check that you copied the whole API key and try again.",
+    "details": {}
+  }
+}

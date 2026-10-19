@@ -1,0 +1,67 @@
+{
+  "$defs": {
+    "JobLedgerEntryOut": {
+      "description": "One ledger entry of a job: its `hold`, its `charge` and a `release`.",
+      "properties": {
+        "amount_usd_micro": {
+          "title": "Amount Usd Micro",
+          "type": "integer"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "hold",
+            "charge",
+            "release"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Reason"
+        }
+      },
+      "required": [
+        "kind",
+        "amount_usd_micro",
+        "created_at",
+        "reason"
+      ],
+      "title": "JobLedgerEntryOut",
+      "type": "object"
+    }
+  },
+  "description": "GET /v1/account/jobs/{job_id}/ledger response: the job's entries in write order.",
+  "properties": {
+    "entries": {
+      "items": {
+        "$ref": "#/$defs/JobLedgerEntryOut"
+      },
+      "title": "Entries",
+      "type": "array"
+    },
+    "job_id": {
+      "format": "uuid",
+      "title": "Job Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "job_id",
+    "entries"
+  ],
+  "title": "JobLedgerOut",
+  "type": "object"
+}

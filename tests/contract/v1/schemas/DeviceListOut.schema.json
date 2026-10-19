@@ -1,0 +1,331 @@
+{
+  "$defs": {
+    "DeviceMethodOut": {
+      "description": "A method the device runs, and the shots it accepts for it (inclusive).",
+      "properties": {
+        "max_shots": {
+          "minimum": 0,
+          "title": "Max Shots",
+          "type": "integer"
+        },
+        "method": {
+          "$ref": "#/$defs/Method"
+        },
+        "min_shots": {
+          "minimum": 0,
+          "title": "Min Shots",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "method",
+        "min_shots",
+        "max_shots"
+      ],
+      "title": "DeviceMethodOut",
+      "type": "object"
+    },
+    "DeviceOut": {
+      "description": "One device in the catalog. Queue depth is never shown.\n\nstatus is the cached vendor status and status_updated_at when the router last\nchecked it (null until the first check). available_now is whether now is inside\none of availability_windows, and null when no windows are known.",
+      "properties": {
+        "availability_windows": {
+          "items": {
+            "$ref": "#/$defs/DeviceWindowOut"
+          },
+          "title": "Availability Windows",
+          "type": "array"
+        },
+        "available_now": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Available Now"
+        },
+        "example_price": {
+          "$ref": "#/$defs/ExamplePriceOut"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "qpu",
+            "simulator"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "methods": {
+          "items": {
+            "$ref": "#/$defs/DeviceMethodOut"
+          },
+          "title": "Methods",
+          "type": "array"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "price": {
+          "$ref": "#/$defs/DevicePriceOut"
+        },
+        "qubits": {
+          "minimum": 1,
+          "title": "Qubits",
+          "type": "integer"
+        },
+        "status": {
+          "enum": [
+            "online",
+            "offline",
+            "retired"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "status_updated_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Status Updated At"
+        },
+        "vendor": {
+          "title": "Vendor",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "vendor",
+        "name",
+        "kind",
+        "qubits",
+        "status",
+        "status_updated_at",
+        "available_now",
+        "availability_windows",
+        "methods",
+        "price",
+        "example_price"
+      ],
+      "title": "DeviceOut",
+      "type": "object"
+    },
+    "DevicePriceOut": {
+      "description": "The device's current price (its highest price version), before any job.\n\nduration_per_minute (simulators) uses per_minute_usd_micro and min_billable_ms;\ntask_plus_shot (QPUs) uses task_fee_usd_micro and per_shot_usd_micro. The\nfields of the other model are null. markup_bps is the EigenOrbit markup\nin basis points (2000 = 20%) applied on top of the vendor's price.\n\nhold_seconds (additive) is a simulator's per-task hold window: an\nestimate holds max(min_billable_ms, hold_seconds * 1000) of device time. It\nis null for task_plus_shot, whose estimate depends on the shots instead.",
+      "properties": {
+        "hold_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hold Seconds"
+        },
+        "markup_bps": {
+          "minimum": 0,
+          "title": "Markup Bps",
+          "type": "integer"
+        },
+        "min_billable_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Min Billable Ms"
+        },
+        "per_minute_usd_micro": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Per Minute Usd Micro"
+        },
+        "per_shot_usd_micro": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Per Shot Usd Micro"
+        },
+        "price_version": {
+          "title": "Price Version",
+          "type": "string"
+        },
+        "pricing_model": {
+          "enum": [
+            "duration_per_minute",
+            "task_plus_shot"
+          ],
+          "title": "Pricing Model",
+          "type": "string"
+        },
+        "task_fee_usd_micro": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Task Fee Usd Micro"
+        }
+      },
+      "required": [
+        "price_version",
+        "pricing_model",
+        "markup_bps",
+        "task_fee_usd_micro",
+        "per_shot_usd_micro",
+        "per_minute_usd_micro",
+        "min_billable_ms"
+      ],
+      "title": "DevicePriceOut",
+      "type": "object"
+    },
+    "DeviceWindowOut": {
+      "description": "One availability window: `day`, and inclusive start and end times, \"HH:MM:SS\" UTC.\n\nA window whose end is earlier than its start wraps past midnight into the next day.",
+      "properties": {
+        "day": {
+          "enum": [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+            "Weekdays",
+            "Weekend",
+            "Everyday"
+          ],
+          "title": "Day",
+          "type": "string"
+        },
+        "end_utc": {
+          "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+          "title": "End Utc",
+          "type": "string"
+        },
+        "start_utc": {
+          "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+          "title": "Start Utc",
+          "type": "string"
+        }
+      },
+      "required": [
+        "day",
+        "start_utc",
+        "end_utc"
+      ],
+      "title": "DeviceWindowOut",
+      "type": "object"
+    },
+    "ExamplePriceOut": {
+      "description": "What one job would cost on the current price: vendor cost + fee = total.\n\nshots is 1000 clamped into the device's shot range. billed_duration_ms is the\ndevice time priced (the minimum billable duration) for duration_per_minute\ndevices and null for task_plus_shot devices. The amounts use the same\none-ceiling arithmetic as an estimate (section 11).",
+      "properties": {
+        "billed_duration_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Billed Duration Ms"
+        },
+        "fee_usd_micro": {
+          "minimum": 0,
+          "title": "Fee Usd Micro",
+          "type": "integer"
+        },
+        "shots": {
+          "minimum": 0,
+          "title": "Shots",
+          "type": "integer"
+        },
+        "total_usd_micro": {
+          "minimum": 0,
+          "title": "Total Usd Micro",
+          "type": "integer"
+        },
+        "vendor_cost_usd_micro": {
+          "minimum": 0,
+          "title": "Vendor Cost Usd Micro",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "shots",
+        "billed_duration_ms",
+        "vendor_cost_usd_micro",
+        "fee_usd_micro",
+        "total_usd_micro"
+      ],
+      "title": "ExamplePriceOut",
+      "type": "object"
+    },
+    "Method": {
+      "description": "Mirrors kit CompiledCircuit methods.",
+      "enum": [
+        "run",
+        "sample",
+        "probabilities",
+        "zero_state_probability"
+      ],
+      "title": "Method",
+      "type": "string"
+    }
+  },
+  "description": "GET /v1/devices response: every enabled device, sorted by id.",
+  "properties": {
+    "devices": {
+      "items": {
+        "$ref": "#/$defs/DeviceOut"
+      },
+      "title": "Devices",
+      "type": "array"
+    }
+  },
+  "required": [
+    "devices"
+  ],
+  "title": "DeviceListOut",
+  "type": "object"
+}

@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "result_expired",
+    "message": "This job's result was deleted after the 90-day retention period",
+    "details": {
+      "expired_at": "2026-12-23T14:45:03.214000Z"
+    }
+  }
+}

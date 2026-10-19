@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "insufficient_balance",
+    "message": "The available balance does not cover this job's hold",
+    "details": {
+      "job_id": "01a0d3c5-6d70-7d32-95e6-07c356bd2bce"
+    }
+  }
+}
