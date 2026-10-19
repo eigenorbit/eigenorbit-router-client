@@ -1,6 +1,6 @@
 [project]
 name = "eigenorbit-router-client"
-version = "0.0.0"
+version = "0.1.0"
 description = "Run eigenkit circuits on real quantum hardware through EigenOrbit Router."
 readme = "README.md"
 license = "Apache-2.0"
