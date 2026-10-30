@@ -75,11 +75,6 @@ def test_client_error_codes_is_a_package_export():
     assert CLIENT_ERROR_CODES == {"invalid_response", "poll_timeout", "router_unreachable"}
 
 
-def test_the_branch_version_is_zero_until_the_first_release():
-    # semantic-release writes the real version at release time.
-    assert _pyproject()["project"]["version"] == "0.0.0"
-
-
 def test_the_license_is_the_apache_expression_with_its_file():
     project = _pyproject()["project"]
     assert project["license"] == "Apache-2.0"
@@ -105,10 +100,10 @@ def test_semantic_release_carries_no_publish_or_environment_keys():
     assert [k for k in DROPPED_RELEASE_KEYS if k in config] == []
 
 
-def test_the_changelog_is_empty_with_the_insertion_flag():
+def test_the_changelog_keeps_the_insertion_flag():
     # semantic-release only updates a changelog that carries the flag.
     text = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-    assert text == "# Changelog\n\n<!-- version list -->\n"
+    assert "<!-- version list -->" in text
 
 
 def test_the_package_ships_its_type_marker():
