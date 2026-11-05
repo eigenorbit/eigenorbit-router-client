@@ -463,6 +463,39 @@ def test_built_requests_validate_against_the_job_request_schema(circuit, method)
     assert request["inputs"] == inputs.tolist()
 
 
+IBM_OPTIONS = {
+    "dynamical_decoupling": {"enable": True, "sequence_type": "XpXm"},
+    "twirling": {"enable_gates": True, "num_randomizations": 4, "shots_per_randomization": 25},
+}
+
+
+def test_a_request_with_primitive_options_validates_against_the_job_request_schema():
+    spec, observables, weights, inputs = CIRCUITS["ry_example"]()
+    compiled = _compile(
+        spec, observables, device="ibm/ibm_fez", shots=100, primitive_options=IBM_OPTIONS
+    )
+    try:
+        request = compiled.build_request("sample", weights, inputs)
+    finally:
+        compiled.close()
+
+    assert request["ibm_options"] == IBM_OPTIONS
+    _assert_valid("JobRequest", request)
+
+
+@pytest.mark.parametrize(
+    "ibm_options",
+    [
+        {"resilience_level": 1},
+        {"dynamical_decoupling": {"enable": True, "sequence_type": "ZZ"}},
+        {"twirling": {"enable_gates": True, "strategy": "all"}},
+    ],
+)
+def test_the_job_request_schema_refuses_options_outside_the_allowlist(ibm_options):
+    request = {**_example("job_submit_request"), "ibm_options": ibm_options}
+    assert list(_validator("JobRequest").iter_errors(request)), ibm_options
+
+
 def test_the_ry_example_request_is_rebuilt_exactly():
     example = _example("job_submit_request")
     spec, observables, weights, inputs = _ry_example_circuit()

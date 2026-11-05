@@ -1,5 +1,130 @@
 {
   "$defs": {
+    "IbmDynamicalDecouplingIn": {
+      "additionalProperties": false,
+      "description": "Dynamical decoupling options sent to Qiskit Runtime.",
+      "properties": {
+        "enable": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Enable"
+        },
+        "sequence_type": {
+          "anyOf": [
+            {
+              "enum": [
+                "XX",
+                "XpXm",
+                "XY4"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sequence Type"
+        }
+      },
+      "title": "IbmDynamicalDecouplingIn",
+      "type": "object"
+    },
+    "IbmOptionsIn": {
+      "additionalProperties": false,
+      "description": "Qiskit Runtime options for a job on an IBM Quantum device.\n\nEvery key is optional and no other key is accepted; absent or null keys are not sent.",
+      "properties": {
+        "dynamical_decoupling": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/IbmDynamicalDecouplingIn"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "twirling": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/IbmTwirlingIn"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "IbmOptionsIn",
+      "type": "object"
+    },
+    "IbmTwirlingIn": {
+      "additionalProperties": false,
+      "description": "Pauli twirling options sent to Qiskit Runtime.\n\nWith an enable flag true or a count given, both counts are required and their\nproduct must equal the job's shots.",
+      "properties": {
+        "enable_gates": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Enable Gates"
+        },
+        "enable_measure": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Enable Measure"
+        },
+        "num_randomizations": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Num Randomizations"
+        },
+        "shots_per_randomization": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Shots Per Randomization"
+        }
+      },
+      "title": "IbmTwirlingIn",
+      "type": "object"
+    },
     "Method": {
       "description": "Mirrors kit CompiledCircuit methods.",
       "enum": [
@@ -13,7 +138,7 @@
     }
   },
   "additionalProperties": false,
-  "description": "Body of both POST /v1/jobs/estimate and POST /v1/jobs.\n\ncircuit_spec is kit's circuit_spec_to_json output (n_qubits, n_weights,\nn_inputs, gates); observables is kit's observables_to_json output. The\nschema accepts 2-D weights/inputs, but Braket devices reject them with\nbatch_not_supported.",
+  "description": "Body of both POST /v1/jobs/estimate and POST /v1/jobs.\n\ncircuit_spec is kit's circuit_spec_to_json output (n_qubits, n_weights,\nn_inputs, gates); observables is kit's observables_to_json output. The\nschema accepts 2-D weights/inputs, but Braket devices reject them with\nbatch_not_supported. ibm_options applies to IBM Quantum devices only; any\nother device refuses it.",
   "properties": {
     "circuit_spec": {
       "additionalProperties": true,
@@ -25,6 +150,17 @@
       "pattern": "^[a-z0-9]+/[a-z0-9_-]+$",
       "title": "Device",
       "type": "string"
+    },
+    "ibm_options": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/IbmOptionsIn"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "inputs": {
       "anyOf": [

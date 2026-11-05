@@ -28,6 +28,17 @@
     "seed_transpiler": 1234,
     "optimization_level": 1,
     "qiskit_version": "1.4.6",
-    "qiskit_ibm_runtime_version": "0.43.1"
+    "qiskit_ibm_runtime_version": "0.43.1",
+    "ibm_options": {
+      "dynamical_decoupling": {
+        "enable": true,
+        "sequence_type": "XY4"
+      },
+      "twirling": {
+        "enable_gates": true,
+        "num_randomizations": 10,
+        "shots_per_randomization": 100
+      }
+    }
   }
 }
