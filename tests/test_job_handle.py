@@ -13,6 +13,7 @@ from eigenkit.core.observables import all_z
 
 import eigenorbit_router_client as client
 from eigenorbit_router_client import RouterConfig, RouterError
+from eigenorbit_router_client._decode import decode_execution
 from fake_router import VALID_KEY
 
 
@@ -473,3 +474,137 @@ def test_an_integer_usage_reads_as_float_seconds(fake_router):
 
     assert handle.ibm_usage_seconds == 3.0
     assert isinstance(handle.ibm_usage_seconds, float)
+
+
+# ---- what the router ran on the vendor: execution() ----
+
+
+EXECUTION_KEYS = {
+    "vendor_job_id",
+    "initial_layout",
+    "final_layout",
+    "active_qubits",
+    "transpiled_qasm3",
+    "seed_transpiler",
+    "optimization_level",
+    "qiskit_version",
+    "qiskit_ibm_runtime_version",
+}
+
+
+def _ibm_handle(method="sample"):
+    return _submit(_router_circuit(device="ibm/ibm_fez", shots=100), method)
+
+
+def test_an_ibm_handle_returns_the_execution_block(fake_router):
+    handle = _ibm_handle()
+    handle.result()
+
+    execution = handle.execution()
+
+    [job] = fake_router.jobs.values()
+    assert execution == job["execution"]
+    assert set(execution) == EXECUTION_KEYS
+    assert execution["vendor_job_id"].startswith("d4fake")
+    assert execution["initial_layout"] == execution["final_layout"] == [0, 1]
+    assert execution["transpiled_qasm3"].startswith("OPENQASM 3.0;")
+    assert execution["seed_transpiler"] == 1234
+
+
+def test_execution_and_result_share_one_result_fetch(fake_router):
+    handle = _ibm_handle()
+    result_path = f"/v1/jobs/{handle.job_id()}/result"
+
+    execution = handle.execution()
+    counts = handle.result()
+    again = handle.execution()
+
+    assert len(_sent(fake_router, "GET", result_path)) == 1
+    assert again == execution
+    assert sum(counts.values()) == 100
+
+
+def test_execution_after_result_sends_nothing(fake_router):
+    handle = _ibm_handle("probabilities")
+    handle.result()
+    sent = len(fake_router.requests)
+
+    handle.execution()
+
+    assert len(fake_router.requests) == sent
+
+
+def test_execution_does_not_change_the_result(fake_router):
+    fake_router.execution_extra = {"ibm_options": {"twirling": {"enable_gates": True}}}
+    with_block = _ibm_handle("probabilities")
+    fake_router.execution = "absent"
+    without_block = _ibm_handle("probabilities")
+
+    with_block.execution()
+
+    np.testing.assert_array_equal(with_block.result(), without_block.result())
+    assert with_block.result().dtype == np.float64
+
+
+def test_a_braket_job_has_no_execution(fake_router):
+    handle = _submit(_router_circuit(), "run")
+
+    assert handle.execution() is None
+    assert handle.result().shape == (2,)
+
+
+def test_a_result_stored_before_the_block_existed_has_no_execution(fake_router):
+    fake_router.execution = "null"
+    handle = _ibm_handle()
+
+    assert handle.execution() is None
+
+
+def test_an_older_router_without_the_field_has_no_execution(fake_router):
+    fake_router.execution = "absent"
+    handle = _ibm_handle()
+
+    assert handle.execution() is None
+    assert sum(handle.result().values()) == 100
+
+
+def test_keys_a_newer_router_adds_are_kept(fake_router):
+    options = {"dynamical_decoupling": {"enable": True, "sequence_type": "XpXm"}}
+    fake_router.execution_extra = {"ibm_options": options, "queue_seconds": 4.2}
+    handle = _ibm_handle()
+
+    execution = handle.execution()
+
+    assert execution["ibm_options"] == options
+    assert execution["queue_seconds"] == 4.2
+    assert EXECUTION_KEYS <= set(execution)
+
+
+def test_a_caller_editing_the_execution_does_not_change_the_handle(fake_router):
+    handle = _ibm_handle()
+    first = handle.execution()
+
+    first["initial_layout"].append(99)
+    first["vendor_job_id"] = "changed"
+
+    assert handle.execution()["initial_layout"] == [0, 1]
+    assert handle.execution()["vendor_job_id"] != "changed"
+
+
+def test_execution_of_a_failed_job_raises_like_result(fake_router):
+    fake_router.fail_with = "ibm_quota_exhausted"
+    handle = _ibm_handle()
+
+    with pytest.raises(RouterError) as caught:
+        handle.execution()
+
+    assert caught.value.code == "ibm_quota_exhausted"
+    assert caught.value.job_id == handle.job_id()
+    assert _sent(fake_router, "GET", f"/v1/jobs/{handle.job_id()}/result") == []
+
+
+@pytest.mark.parametrize(
+    "payload", [{"execution": "d4abc"}, {"execution": ["d4abc"]}, {"execution": 7}, None]
+)
+def test_an_execution_that_is_not_an_object_reads_as_none(payload):
+    assert decode_execution(payload) is None

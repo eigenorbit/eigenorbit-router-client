@@ -43,7 +43,7 @@ from eigenkit.core.wire import circuit_spec_from_json, observables_from_json
 from jsonschema import Draft202012Validator
 
 from eigenorbit_router_client import RouterConfig, RouterError
-from eigenorbit_router_client._decode import decode_result
+from eigenorbit_router_client._decode import decode_execution, decode_result
 from eigenorbit_router_client.backend import RouterBackend
 from fake_router import VALID_KEY, FakeRouter
 
@@ -535,6 +535,25 @@ def test_the_zero_state_probability_example_decodes_to_the_numpy_value():
     assert math.isclose(float(got), float(want), rel_tol=0.0, abs_tol=1e-12)
 
 
+def test_the_ibm_sample_example_decodes_its_counts_and_its_execution():
+    payload = _example("job_result_ibm_sample")
+
+    counts = decode_result(
+        payload, method="sample", n_qubits=2, n_observables=1, job_id=payload["job_id"]
+    )
+    execution = decode_execution(payload)
+
+    assert counts == payload["result"]["data"]
+    assert execution == payload["execution"]
+    assert execution["vendor_job_id"]
+    assert execution["transpiled_qasm3"].startswith("OPENQASM 3.0;")
+
+
+def test_results_without_an_execution_have_none():
+    for stem in ("job_result_run", "job_result_zero_state_probability"):
+        assert decode_execution(_example(stem)) is None
+
+
 def test_a_probabilities_payload_decodes_to_the_numpy_probabilities():
     spec = CircuitSpec(
         n_qubits=2,
@@ -803,6 +822,21 @@ def test_the_double_result_bodies_are_valid_and_decode(double, method):
     payload = response.json()
     _assert_valid("JobResultOut", payload)
     decode_result(payload, method=method, n_qubits=2, n_observables=2, job_id=job_id)
+
+
+@pytest.mark.parametrize("extra", [{}, {"ibm_options": {"twirling": {"enable_gates": True}}}])
+def test_the_double_ibm_result_body_with_its_execution_is_valid(extra):
+    router = FakeRouter(execution_extra=extra)
+    body = {**_request_body("sample"), "device": "ibm/ibm_fez"}
+    with httpx.Client(base_url=BASE_URL, transport=router.transport) as http:
+        job_id = _submit(http, body).json()["id"]
+        _poll_to_terminal(http, job_id)
+        payload = http.get(f"/v1/jobs/{job_id}/result", headers=_headers()).json()
+
+    _assert_valid("JobResultOut", payload)
+    execution = decode_execution(payload)
+    assert execution == router.jobs[job_id]["execution"]
+    assert all(execution[key] == value for key, value in extra.items())
 
 
 def _error_cases(router: FakeRouter, http: httpx.Client):

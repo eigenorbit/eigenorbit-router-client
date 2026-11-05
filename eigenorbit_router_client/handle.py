@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import copy
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from ._decode import decode_result
+from ._decode import decode_execution, decode_result
 from .errors import RouterError
 
 
@@ -42,6 +43,7 @@ class RouterJobHandle:
         self._n_observables = n_observables
         self._poll_timeout_seconds = poll_timeout_seconds
         self._result: np.ndarray | dict[str, int] | None = None
+        self._execution: dict[str, Any] | None = None
 
     @property
     def method(self) -> str:
@@ -102,8 +104,34 @@ class RouterJobHandle:
             RouterError: The job did not complete, or the wait timed out
                 (`poll_timeout`; call `result()` again to keep waiting).
         """
+        self._fetch()
+        return self._result
+
+    def execution(self) -> dict[str, Any] | None:
+        """What the router ran on the vendor for this job, sent with its result.
+
+        For an IBM job: the IBM job ID (`vendor_job_id`), the physical qubits
+        (`initial_layout`, `final_layout`, `active_qubits`), the transpiled
+        circuit as OpenQASM 3 (`transpiled_qasm3`), `seed_transpiler`,
+        `optimization_level`, `qiskit_version` and
+        `qiskit_ibm_runtime_version`. Every key but `vendor_job_id` may be
+        None, and keys a newer router adds are kept. None for a Braket job, for
+        a result stored before the router recorded it, and from a router that
+        does not send it.
+
+        Waits for the job and fetches its result as `result()` does. The two
+        share that one fetch: after either has returned, neither sends anything.
+
+        Raises:
+            RouterError: As `result()`.
+        """
+        self._fetch()
+        return copy.deepcopy(self._execution)
+
+    def _fetch(self) -> None:
+        """Wait for the job, then fetch and decode its result, once."""
         if self._result is not None:
-            return self._result
+            return
         job = self._http.wait(self._job_id, timeout_seconds=self._poll_timeout_seconds)
         self._job = job
         if job.get("status") != "completed":
@@ -118,8 +146,8 @@ class RouterJobHandle:
         )
         if self._method == "zero_state_probability":
             value = np.asarray(value, dtype=np.float64).reshape(())
+        self._execution = decode_execution(payload)
         self._result = value
-        return value
 
     def cancel(self) -> str | None:
         """Ask the router to cancel the job, and return its status right after.

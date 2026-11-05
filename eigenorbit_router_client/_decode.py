@@ -72,6 +72,18 @@ def decode_result(
     return values.reshape(expected)
 
 
+def decode_execution(payload: Any) -> dict[str, Any] | None:
+    """The `execution` object of a JobResultOut (contract section 8), or None.
+
+    None when the router sends null (a Braket job, or a result stored before
+    the router recorded it), leaves the field out (an older router) or sends
+    something that is not an object. Its keys, including ones a newer router
+    adds, are returned as the router sent them.
+    """
+    execution = payload.get("execution") if isinstance(payload, dict) else None
+    return execution if isinstance(execution, dict) else None
+
+
 def _decode_counts(result: dict, n_qubits: int, invalid) -> dict[str, int]:
     if result.get("kind") != "counts":
         raise invalid("is not counts")

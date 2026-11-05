@@ -103,6 +103,27 @@ def _validation_error(loc: list, msg: str) -> httpx.Response:
     )
 
 
+def _ibm_execution(n_qubits: int) -> dict[str, Any]:
+    """An ExecutionOut (contract section 8) for an IBM job on qubits 0..n-1."""
+    qubits = list(range(n_qubits))
+    gates = "".join(f"sx ${q};\n" for q in qubits)
+    measures = "".join(f"meas[{q}] = measure ${q};\n" for q in qubits)
+    return {
+        "vendor_job_id": "d4fake" + uuid.uuid4().hex[:14],
+        "initial_layout": qubits,
+        "final_layout": qubits,
+        "active_qubits": qubits,
+        "transpiled_qasm3": (
+            f'OPENQASM 3.0;\ninclude "stdgates.inc";\nbit[{n_qubits}] meas;\n'
+            f"{gates}{measures}"
+        ),
+        "seed_transpiler": 1234,
+        "optimization_level": 1,
+        "qiskit_version": "1.4.6",
+        "qiskit_ibm_runtime_version": "0.43.1",
+    }
+
+
 def upgrade_message(protocol_min: int, protocol_max: int) -> str:
     """The router's 426 message (contract v1)."""
     return (
@@ -189,6 +210,12 @@ class FakeRouter:
         ibm_job_fields: False leaves `credential_source` and
             `ibm_usage_seconds` out of JobOut, as a router that does not send
             them does.
+        execution: What JobResultOut says about the vendor run: "send" (an
+            ExecutionOut for an IBM job, null for a Braket job), "null" (null
+            for every job, as for results stored before the router recorded
+            it) or "absent" (no `execution` field, as from an older router).
+        execution_extra: Keys merged into every IBM job's ExecutionOut, as a
+            newer router may add.
 
     Attributes:
         max_in_flight: The most POST /v1/jobs handled at the same time.
@@ -224,6 +251,8 @@ class FakeRouter:
         credential_source: str = "organization",
         ibm_usage_seconds: float | None = 2.315,
         ibm_job_fields: bool = True,
+        execution: str = "send",
+        execution_extra: dict[str, Any] | None = None,
     ):
         self.status_steps = status_steps
         self.fail_with = fail_with
@@ -249,6 +278,8 @@ class FakeRouter:
         self.credential_source = credential_source
         self.ibm_usage_seconds = ibm_usage_seconds
         self.ibm_job_fields = ibm_job_fields
+        self.execution = execution
+        self.execution_extra = dict(execution_extra or {})
         self.max_in_flight = 0
         self.terminal_order: list[str] = []
         self._in_flight = 0
@@ -644,6 +675,11 @@ class FakeRouter:
             "updated_at": created,
             "completed_at": None,
             "cancel": None,
+            "execution": (
+                {**_ibm_execution(admitted[0].n_qubits), **self.execution_extra}
+                if _is_ibm(body["device"])
+                else None
+            ),
         }
         self._idempotency[key] = (body, job_id)
         return _ok(202, self._job_out(job_id))
@@ -708,15 +744,17 @@ class FakeRouter:
                 "The job has not completed",
                 {"status": job["status"]},
             )
-        return _ok(
-            200,
-            {
-                "job_id": job_id,
-                "method": job["request"]["method"],
-                "bit_order": "qubit0_msb",
-                "result": job["result"],
-            },
-        )
+        out = {
+            "job_id": job_id,
+            "method": job["request"]["method"],
+            "bit_order": "qubit0_msb",
+            "result": job["result"],
+        }
+        if self.execution == "send":
+            out["execution"] = job["execution"]
+        elif self.execution == "null":
+            out["execution"] = None
+        return _ok(200, out)
 
     # ---- per-job behaviour ----
 

@@ -131,6 +131,13 @@ Connect it once on the router's IBM account page
 IBM jobs are free through the router; IBM bills your instance for the quantum
 time they use.
 
+`handle.execution()` returns what the router ran on IBM for a finished job,
+from the same request as `handle.result()`: the IBM job ID
+(`vendor_job_id`), the physical qubits (`initial_layout`, `final_layout`,
+`active_qubits`), the transpiled circuit as OpenQASM 3 (`transpiled_qasm3`),
+`seed_transpiler`, `optimization_level` and the Qiskit versions. It is None
+for a Braket job.
+
 ## Saved models
 
 A model whose provider is a `RouterConfig` saves the device and the settings,
