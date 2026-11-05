@@ -18,6 +18,7 @@ import pytest
 README = Path(__file__).resolve().parent.parent / "README.md"
 
 INSTALL_LINE = 'pip install "eigenkit[router]"'
+UPGRADE_LINE = "pip install -U eigenorbit-router-client"
 
 _PYTHON_BLOCK = re.compile(r"^```python\n(?P<body>.*?)^```", re.DOTALL | re.MULTILINE)
 
@@ -74,11 +75,13 @@ def test_every_python_block_parses_and_its_imports_exist():
         _assert_imports_resolve(source)
 
 
-def test_every_install_line_is_the_eigenkit_router_extra():
+def test_every_install_line_is_the_eigenkit_router_extra_or_the_client_upgrade():
     lines = [line.strip() for line in _text().splitlines() if "pip install" in line]
 
-    assert lines, "README.md has no install line"
-    assert all(line == INSTALL_LINE for line in lines), lines
+    assert INSTALL_LINE in lines, lines
+    # The one other line upgrades the client by name: pip keeps an installed
+    # client that still satisfies the extra when only eigenkit is upgraded.
+    assert all(line in (INSTALL_LINE, UPGRADE_LINE) for line in lines), lines
 
 
 def test_the_readme_names_no_other_package_index():

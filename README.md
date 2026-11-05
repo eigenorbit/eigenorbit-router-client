@@ -26,9 +26,8 @@ in the client, so upgrade it by name:
 pip install -U eigenorbit-router-client
 ```
 
-`pip install -U "eigenkit[router]"` upgrades the client only when the installed
-version no longer satisfies the `router` extra, which is pip's default
-`--upgrade-strategy only-if-needed`.
+Upgrading eigenkit alone keeps an installed client that still satisfies the
+`router` extra, because pip upgrades a dependency only when it has to.
 
 ## API key
 
