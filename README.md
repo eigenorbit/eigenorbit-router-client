@@ -19,7 +19,16 @@ Quantum account and carry no router charge.
 pip install "eigenkit[router]"
 ```
 
-The `router` extra of eigenkit installs this client.
+The `router` extra of eigenkit installs this client. New router features ship
+in the client, so upgrade it by name:
+
+```bash
+pip install -U eigenorbit-router-client
+```
+
+`pip install -U "eigenkit[router]"` upgrades the client only when the installed
+version no longer satisfies the `router` extra, which is pip's default
+`--upgrade-strategy only-if-needed`.
 
 ## API key
 
