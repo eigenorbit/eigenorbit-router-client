@@ -131,6 +131,35 @@ Connect it once on the router's IBM account page
 IBM jobs are free through the router; IBM bills your instance for the quantum
 time they use.
 
+`primitive_options` passes Qiskit Runtime options to the job's primitive. It
+has the name and shape of `primitive_options` on eigenkit's
+`QiskitRuntimeConfig`, so the same options work with your own IBM credentials:
+
+```python
+from eigenorbit_router_client import RouterConfig
+
+provider = RouterConfig(
+    device="ibm/ibm_fez",
+    shots=4000,
+    primitive_options={
+        "dynamical_decoupling": {"enable": True, "sequence_type": "XpXm"},
+        "twirling": {
+            "enable_gates": True,
+            "num_randomizations": 40,
+            "shots_per_randomization": 100,
+        },
+    },
+)
+```
+
+The router accepts `dynamical_decoupling` (`enable`, and `sequence_type`
+`XX`, `XpXm` or `XY4`) and `twirling` (`enable_gates`, `enable_measure`,
+`num_randomizations`, `shots_per_randomization`). With twirling,
+`num_randomizations * shots_per_randomization` must equal `shots`. Anything
+else is refused with `validation_error` before the job is created. Only IBM
+devices take `primitive_options`; on any other device `RouterConfig` raises
+`ValueError`.
+
 `handle.execution()` returns what the router ran on IBM for a finished job,
 from the same request as `handle.result()`: the IBM job ID
 (`vendor_job_id`), the physical qubits (`initial_layout`, `final_layout`,

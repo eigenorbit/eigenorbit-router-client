@@ -26,7 +26,7 @@ from eigenkit.core.wire import circuit_spec_to_json, observables_to_json
 from . import _client
 from ._client import POLL_DELAYS, TERMINAL_STATUSES, RouterHttpClient
 from ._decode import decode_result
-from .config import RouterConfig
+from .config import RouterConfig, ibm_options
 from .errors import RouterError, refusal_hint
 from .handle import RouterJobHandle
 
@@ -392,8 +392,12 @@ class RouterCompiled(CompiledCircuit):
         }
 
     def build_request(self, method: str, weights, inputs) -> dict[str, Any]:
-        """The contract `JobRequest` for one call."""
-        return {
+        """The contract `JobRequest` for one call, also sent to the estimate.
+
+        It carries `ibm_options` only when `RouterConfig.primitive_options` is
+        set, so a request without them is the same as before the field existed.
+        """
+        body = {
             "device": self._config.device,
             "method": method,
             "shots": self._config.shots,
@@ -402,6 +406,10 @@ class RouterCompiled(CompiledCircuit):
             "weights": np.asarray(weights, dtype=np.float64).tolist(),
             "inputs": np.asarray(inputs, dtype=np.float64).tolist(),
         }
+        options = ibm_options(self._config)
+        if options is not None:
+            body["ibm_options"] = options
+        return body
 
     def run(self, weights, inputs) -> np.ndarray:
         """Evaluate the observables: `(n_obs,)`, or `(B, n_obs)` for a 2-D batch."""

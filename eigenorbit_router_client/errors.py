@@ -69,9 +69,18 @@ class RouterError(RuntimeError):
 
     @classmethod
     def from_response(
-        cls, response: httpx.Response, *, job_id: str | None = None
+        cls,
+        response: httpx.Response,
+        *,
+        job_id: str | None = None,
+        sent_ibm_options: bool = False,
     ) -> RouterError:
-        """Build the error for a non-2xx router response."""
+        """Build the error for a non-2xx router response.
+
+        `sent_ibm_options` says the request carried `ibm_options`, so a
+        validation error the router reports for the whole body gets the
+        primitive options hint too.
+        """
         status = response.status_code
         try:
             body = response.json()
@@ -92,7 +101,10 @@ class RouterError(RuntimeError):
         details = error.get("details")
         if not isinstance(details, dict):
             details = {}
-        extra = refusal_hint(code, details)
+        if code == "validation_error":
+            extra = _ibm_options_hint(details, sent=sent_ibm_options)
+        else:
+            extra = refusal_hint(code, details)
         if extra:
             message = _append(message, extra)
         return cls(code, message, details, http_status=status, job_id=job_id)
@@ -267,6 +279,42 @@ _JOB_HINTS = {
         f"{IBM_ACCOUNT_PAGE}."
     ),
 }
+
+
+# What the router accepts as `ibm_options`, the request field that carries
+# RouterConfig.primitive_options.
+_IBM_OPTIONS_HINT = (
+    "RouterConfig.primitive_options is sent as ibm_options, which takes only "
+    "dynamical_decoupling.enable and .sequence_type ('XX', 'XpXm' or 'XY4') and "
+    "twirling.enable_gates, .enable_measure, .num_randomizations and "
+    ".shots_per_randomization; twirling's num_randomizations * "
+    "shots_per_randomization must equal RouterConfig.shots."
+)
+_IBM_OPTIONS_UNKNOWN_HINT = (
+    "This router does not accept RouterConfig.primitive_options (sent as "
+    "ibm_options): leave primitive_options empty on it."
+)
+
+
+def _ibm_options_hint(details: dict[str, Any], *, sent: bool) -> str:
+    """The hint for a validation_error (422) about `ibm_options`, or "".
+
+    It is about them when an error's `loc` names `ibm_options`, or when the
+    request carried them (`sent`) and the router names no field: a rule across
+    fields, such as the twirling shots, may be reported for the whole body.
+    """
+    errors = details.get("errors")
+    errors = [e for e in errors if isinstance(e, dict)] if isinstance(errors, list) else []
+    locs = [e.get("loc") if isinstance(e.get("loc"), list) else [] for e in errors]
+    for error, loc in zip(errors, locs):
+        # The router's answer when it has no ibm_options field at all.
+        if loc == ["body", "ibm_options"] and error.get("type") == "extra_forbidden":
+            return _IBM_OPTIONS_UNKNOWN_HINT
+    if any("ibm_options" in loc for loc in locs):
+        return _IBM_OPTIONS_HINT
+    if sent and all(len(loc) <= 1 for loc in locs):
+        return _IBM_OPTIONS_HINT
+    return ""
 
 
 def refusal_hint(code: str, details: dict[str, Any]) -> str:

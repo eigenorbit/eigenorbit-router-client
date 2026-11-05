@@ -7,6 +7,12 @@ sections 5, 6 and 8 and the error envelope of section 9. Results are computed
 with the kit's numpy reference simulator, which is the ground truth the
 router's own answers are compared with.
 
+The optional `ibm_options` of a job request is not in the vendored contract
+yet: the double accepts the shape the router announced for it (an
+`ibm/` device only; `dynamical_decoupling` and `twirling` with their keys;
+twirling's `num_randomizations * shots_per_randomization` equal to the shots)
+and answers anything else with a 422 `validation_error`.
+
 Knobs are plain attributes, so a test can change them after construction.
 """
 
@@ -34,6 +40,15 @@ METHOD_MIN_SHOTS = {"zero_state_probability": 1, "sample": 1}
 REQUEST_FIELDS = frozenset(
     {"device", "method", "shots", "circuit_spec", "observables", "weights", "inputs"}
 )
+# The optional request field for IBM primitive options, and its keys.
+IBM_OPTIONS_FIELD = "ibm_options"
+IBM_OPTIONS_KEYS = {
+    "dynamical_decoupling": frozenset({"enable", "sequence_type"}),
+    "twirling": frozenset(
+        {"enable_gates", "enable_measure", "num_randomizations", "shots_per_randomization"}
+    ),
+}
+DD_SEQUENCES = ("XX", "XpXm", "XY4")
 SETTLED_COST_USD_MICRO = 4500
 # The vendor part of the settled cost: braket/sv1@1 at 3000 ms (contract 5.5).
 SETTLED_VENDOR_COST_USD_MICRO = 3750
@@ -68,6 +83,8 @@ IBM_REFUSAL_MESSAGES = {
 }
 
 _BEARER = re.compile(r"Bearer eo_test_[A-Za-z0-9_-]{43}")
+# The router keeps a `loc` part verbatim only when it looks like a field name.
+_SAFE_LOC_PART = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,63}")
 _IDEMPOTENCY_KEY = re.compile(r"[A-Za-z0-9._:-]{1,128}")
 _JOB_ROUTE = re.compile(r"/v1/jobs/(?P<job_id>[^/]+)(?P<suffix>/result|/cancel)?")
 
@@ -94,13 +111,66 @@ def _ok(status: int, body: dict, headers: dict | None = None) -> httpx.Response:
     )
 
 
-def _validation_error(loc: list, msg: str) -> httpx.Response:
+def _validation_error(loc: list, msg: str, kind: str = "value_error") -> httpx.Response:
     return _error(
         422,
         "validation_error",
         "Request validation failed",
-        {"errors": [{"loc": loc, "msg": msg, "type": "value_error"}]},
+        {"errors": [{"loc": loc, "msg": msg, "type": kind}]},
     )
+
+
+def _loc_part(part: str) -> str:
+    if _SAFE_LOC_PART.fullmatch(part) and not part.startswith("eo_"):
+        return part
+    return "<redacted>"
+
+
+def _extra_forbidden(loc: list) -> httpx.Response:
+    return _validation_error(loc, "Extra inputs are not permitted", "extra_forbidden")
+
+
+def _ibm_options_rejection(body: dict) -> httpx.Response | None:
+    """The 422 for an `ibm_options` the router does not accept, or None."""
+    options = body[IBM_OPTIONS_FIELD]
+    loc = ["body", IBM_OPTIONS_FIELD]
+    if not isinstance(options, dict):
+        return _validation_error(loc, "Input should be a valid dictionary", "dict_type")
+    if not _is_ibm(body["device"]):
+        return _validation_error(loc, "Value error, ibm_options are for IBM devices only")
+    for group, values in options.items():
+        allowed = IBM_OPTIONS_KEYS.get(group)
+        if allowed is None:
+            return _extra_forbidden([*loc, _loc_part(group)])
+        if not isinstance(values, dict):
+            return _validation_error(
+                [*loc, group], "Input should be a valid dictionary", "dict_type"
+            )
+        for key in values:
+            if key not in allowed:
+                return _extra_forbidden([*loc, group, _loc_part(key)])
+    sequence = options.get("dynamical_decoupling", {}).get("sequence_type")
+    if sequence is not None and sequence not in DD_SEQUENCES:
+        return _validation_error(
+            [*loc, "dynamical_decoupling", "sequence_type"],
+            "Input should be 'XX', 'XpXm' or 'XY4'",
+            "literal_error",
+        )
+    twirling = options.get("twirling", {})
+    randomizations = twirling.get("num_randomizations")
+    per_randomization = twirling.get("shots_per_randomization")
+    if (
+        randomizations is not None
+        and per_randomization is not None
+        and randomizations * per_randomization != body["shots"]
+    ):
+        # A rule across fields, reported for the whole body.
+        return _validation_error(
+            ["body"],
+            "Value error, twirling num_randomizations * shots_per_randomization "
+            "must equal shots",
+        )
+    return None
 
 
 def _ibm_execution(n_qubits: int) -> dict[str, Any]:
@@ -210,6 +280,9 @@ class FakeRouter:
         ibm_job_fields: False leaves `credential_source` and
             `ibm_usage_seconds` out of JobOut, as a router that does not send
             them does.
+        ibm_options_supported: False answers a request that carries
+            `ibm_options` with the 422 `extra_forbidden` of a router that has
+            no such field.
         execution: What JobResultOut says about the vendor run: "send" (an
             ExecutionOut for an IBM job, null for a Braket job), "null" (null
             for every job, as for results stored before the router recorded
@@ -251,6 +324,7 @@ class FakeRouter:
         credential_source: str = "organization",
         ibm_usage_seconds: float | None = 2.315,
         ibm_job_fields: bool = True,
+        ibm_options_supported: bool = True,
         execution: str = "send",
         execution_extra: dict[str, Any] | None = None,
     ):
@@ -278,6 +352,7 @@ class FakeRouter:
         self.credential_source = credential_source
         self.ibm_usage_seconds = ibm_usage_seconds
         self.ibm_job_fields = ibm_job_fields
+        self.ibm_options_supported = ibm_options_supported
         self.execution = execution
         self.execution_extra = dict(execution_extra or {})
         self.max_in_flight = 0
@@ -456,19 +531,21 @@ class FakeRouter:
 
     # ---- request parsing and admission ----
 
-    @staticmethod
-    def _parse_body(request: httpx.Request) -> tuple[dict | None, httpx.Response | None]:
+    def _parse_body(
+        self, request: httpx.Request
+    ) -> tuple[dict | None, httpx.Response | None]:
         try:
             body = json.loads(request.content)
         except ValueError:
             return None, _validation_error(["body"], "JSON decode error")
         if not isinstance(body, dict):
             return None, _validation_error(["body"], "Input should be an object")
-        unknown = sorted(set(body) - REQUEST_FIELDS)
+        known = REQUEST_FIELDS | (
+            {IBM_OPTIONS_FIELD} if self.ibm_options_supported else set()
+        )
+        unknown = sorted(set(body) - known)
         if unknown:
-            return None, _validation_error(
-                ["body", "<redacted>"], "Extra inputs are not permitted"
-            )
+            return None, _extra_forbidden(["body", _loc_part(unknown[0])])
         missing = sorted(REQUEST_FIELDS - set(body))
         if missing:
             return None, _validation_error(["body", missing[0]], "Field required")
@@ -479,6 +556,10 @@ class FakeRouter:
             return None, _validation_error(["body", "shots"], "Input should be >= 0")
         if not isinstance(body["observables"], list) or not body["observables"]:
             return None, _validation_error(["body", "observables"], "At least 1 item")
+        if IBM_OPTIONS_FIELD in body:
+            rejected = _ibm_options_rejection(body)
+            if rejected is not None:
+                return None, rejected
         return body, None
 
     def _device_unavailable(self, device: str) -> dict | None:

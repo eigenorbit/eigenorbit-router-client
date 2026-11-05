@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import os
 import re
+from collections.abc import Mapping
 from dataclasses import KW_ONLY, dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit
 
 from eigenkit.core.secret_fields import SecretFieldsMixin
@@ -43,6 +44,15 @@ class RouterConfig(SecretFieldsMixin):
         poll_timeout_seconds: How long a blocking call waits for its job.
         max_concurrent_submits: How many jobs a batch submits at once.
         request_timeout_seconds: Timeout of each HTTP request.
+        primitive_options: Qiskit Runtime primitive options for an IBM device,
+            the same field as eigenkit's `QiskitRuntimeConfig.primitive_options`,
+            for example `{"dynamical_decoupling": {"enable": True}}`. Sent to the
+            router as the job's `ibm_options`, which accepts `dynamical_decoupling`
+            (`enable`, `sequence_type`) and `twirling` (`enable_gates`,
+            `enable_measure`, `num_randomizations`, `shots_per_randomization`)
+            and checks them itself. With twirling, `num_randomizations *
+            shots_per_randomization` must equal `shots`. The default, `{}`,
+            sends nothing. Only for `ibm/` devices.
     """
 
     device: str
@@ -53,6 +63,7 @@ class RouterConfig(SecretFieldsMixin):
     poll_timeout_seconds: int = 3600
     max_concurrent_submits: int = 4
     request_timeout_seconds: float = 30.0
+    primitive_options: dict = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         _check_device(self.device)
@@ -80,6 +91,7 @@ class RouterConfig(SecretFieldsMixin):
             raise ValueError("api_key must be a str or None")
         if self.base_url is not None:
             _check_base_url(self.base_url, source="base_url")
+        ibm_options(self)
 
     def make_backend(self) -> RouterBackend:
         """Build the backend; called by the kit's provider layer."""
@@ -117,6 +129,37 @@ def _check_device(device: object) -> None:
             f"digits, '_' and '-' after the '/'), at most {_DEVICE_MAX_LENGTH} "
             f"characters, for example 'braket/sv1'; got {device!r}"
         )
+
+
+def _plain(value: Any) -> Any:
+    """`value` with every mapping in it copied to a dict, so it encodes as JSON."""
+    if isinstance(value, Mapping):
+        return {key: _plain(item) for key, item in value.items()}
+    return value
+
+
+def ibm_options(config: RouterConfig) -> dict[str, Any] | None:
+    """The job request's `ibm_options` from `config.primitive_options`, or None
+    when it is empty. The router checks the option names and values.
+
+    Raises:
+        TypeError: `primitive_options` is not a mapping.
+        ValueError: `primitive_options` is set for a device that is not `ibm/`.
+    """
+    options = config.primitive_options
+    if not isinstance(options, Mapping):
+        raise TypeError(
+            "primitive_options must be a mapping of Qiskit Runtime options, "
+            f"got {type(options).__name__}"
+        )
+    if not options:
+        return None
+    if config.vendor != "ibm":
+        raise ValueError(
+            f"primitive_options are Qiskit Runtime options for IBM devices "
+            f"(ibm/<backend>) only; {config.device} takes none"
+        )
+    return _plain(options)
 
 
 def _check_base_url(url: object, *, source: str) -> str:
