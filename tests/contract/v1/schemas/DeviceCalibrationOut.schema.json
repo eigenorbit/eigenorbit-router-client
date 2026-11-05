@@ -1,0 +1,38 @@
+{
+  "description": "GET /v1/devices/{device_id}/calibration response: one stored calibration snapshot of\nan IBM Quantum device. vendor_updated_at is when the vendor published the calibration,\ncaptured_at is when the router stored it.",
+  "properties": {
+    "calibration": {
+      "additionalProperties": true,
+      "description": "The vendor's calibration object exactly as published. For IBM Quantum these are the backend properties (backend_name, backend_version, last_update_date, qubits, gates, general), with every time as an RFC 3339 string.",
+      "title": "Calibration",
+      "type": "object"
+    },
+    "captured_at": {
+      "format": "date-time",
+      "title": "Captured At",
+      "type": "string"
+    },
+    "device_id": {
+      "title": "Device Id",
+      "type": "string"
+    },
+    "vendor": {
+      "title": "Vendor",
+      "type": "string"
+    },
+    "vendor_updated_at": {
+      "format": "date-time",
+      "title": "Vendor Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "device_id",
+    "vendor",
+    "vendor_updated_at",
+    "captured_at",
+    "calibration"
+  ],
+  "title": "DeviceCalibrationOut",
+  "type": "object"
+}

@@ -63,6 +63,7 @@ SCHEMA_NAMES = (
     "ApiKeyCreatedOut",
     "ApiKeyListOut",
     "ApiKeyUpdateIn",
+    "DeviceCalibrationOut",
     "DeviceListOut",
     "ErrorEnvelope",
     "EstimateOut",
@@ -144,6 +145,8 @@ EXAMPLE_SCHEMAS = {
     "error_ibm_token_rejected": "ErrorEnvelope",
     "error_ibm_connection_busy": "ErrorEnvelope",
     "devices_list_ibm": "DeviceListOut",
+    "device_calibration_ibm": "DeviceCalibrationOut",
+    "job_result_ibm_sample": "JobResultOut",
 }
 
 METHODS = ("run", "sample", "probabilities", "zero_state_probability")
