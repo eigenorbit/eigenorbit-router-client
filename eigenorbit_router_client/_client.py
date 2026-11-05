@@ -100,6 +100,7 @@ class RouterHttpClient:
             **(headers or {}),
         }
         client = self._client_for(base_url)
+        sent_ibm_options = isinstance(json, dict) and "ibm_options" in json
         attempts = len(RETRY_DELAYS) + 1
         last_response: httpx.Response | None = None
         last_failure = ""
@@ -135,10 +136,14 @@ class RouterHttpClient:
                     job_id=job_id,
                 )
             if not 200 <= status < 300:
-                raise RouterError.from_response(response, job_id=job_id)
+                raise RouterError.from_response(
+                    response, job_id=job_id, sent_ibm_options=sent_ibm_options
+                )
             return response
         if last_response is not None:
-            raise RouterError.from_response(last_response, job_id=job_id)
+            raise RouterError.from_response(
+                last_response, job_id=job_id, sent_ibm_options=sent_ibm_options
+            )
         idempotency_key = fixed_headers.get("Idempotency-Key")
         if idempotency_key is None:
             raise RouterError(

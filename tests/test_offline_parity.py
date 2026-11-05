@@ -43,7 +43,7 @@ from eigenkit.core.wire import circuit_spec_from_json, observables_from_json
 from jsonschema import Draft202012Validator
 
 from eigenorbit_router_client import RouterConfig, RouterError
-from eigenorbit_router_client._decode import decode_result
+from eigenorbit_router_client._decode import decode_execution, decode_result
 from eigenorbit_router_client.backend import RouterBackend
 from fake_router import VALID_KEY, FakeRouter
 
@@ -63,6 +63,7 @@ SCHEMA_NAMES = (
     "ApiKeyCreatedOut",
     "ApiKeyListOut",
     "ApiKeyUpdateIn",
+    "DeviceCalibrationOut",
     "DeviceListOut",
     "ErrorEnvelope",
     "EstimateOut",
@@ -144,6 +145,8 @@ EXAMPLE_SCHEMAS = {
     "error_ibm_token_rejected": "ErrorEnvelope",
     "error_ibm_connection_busy": "ErrorEnvelope",
     "devices_list_ibm": "DeviceListOut",
+    "device_calibration_ibm": "DeviceCalibrationOut",
+    "job_result_ibm_sample": "JobResultOut",
 }
 
 METHODS = ("run", "sample", "probabilities", "zero_state_probability")
@@ -460,6 +463,39 @@ def test_built_requests_validate_against_the_job_request_schema(circuit, method)
     assert request["inputs"] == inputs.tolist()
 
 
+IBM_OPTIONS = {
+    "dynamical_decoupling": {"enable": True, "sequence_type": "XpXm"},
+    "twirling": {"enable_gates": True, "num_randomizations": 4, "shots_per_randomization": 25},
+}
+
+
+def test_a_request_with_primitive_options_validates_against_the_job_request_schema():
+    spec, observables, weights, inputs = CIRCUITS["ry_example"]()
+    compiled = _compile(
+        spec, observables, device="ibm/ibm_fez", shots=100, primitive_options=IBM_OPTIONS
+    )
+    try:
+        request = compiled.build_request("sample", weights, inputs)
+    finally:
+        compiled.close()
+
+    assert request["ibm_options"] == IBM_OPTIONS
+    _assert_valid("JobRequest", request)
+
+
+@pytest.mark.parametrize(
+    "ibm_options",
+    [
+        {"resilience_level": 1},
+        {"dynamical_decoupling": {"enable": True, "sequence_type": "ZZ"}},
+        {"twirling": {"enable_gates": True, "strategy": "all"}},
+    ],
+)
+def test_the_job_request_schema_refuses_options_outside_the_allowlist(ibm_options):
+    request = {**_example("job_submit_request"), "ibm_options": ibm_options}
+    assert list(_validator("JobRequest").iter_errors(request)), ibm_options
+
+
 def test_the_ry_example_request_is_rebuilt_exactly():
     example = _example("job_submit_request")
     spec, observables, weights, inputs = _ry_example_circuit()
@@ -530,6 +566,25 @@ def test_the_zero_state_probability_example_decodes_to_the_numpy_value():
     assert got.shape == () and got.dtype == np.float64
     assert math.isclose(float(got), math.cos(0.25) ** 2, rel_tol=0.0, abs_tol=1e-12)
     assert math.isclose(float(got), float(want), rel_tol=0.0, abs_tol=1e-12)
+
+
+def test_the_ibm_sample_example_decodes_its_counts_and_its_execution():
+    payload = _example("job_result_ibm_sample")
+
+    counts = decode_result(
+        payload, method="sample", n_qubits=2, n_observables=1, job_id=payload["job_id"]
+    )
+    execution = decode_execution(payload)
+
+    assert counts == payload["result"]["data"]
+    assert execution == payload["execution"]
+    assert execution["vendor_job_id"]
+    assert execution["transpiled_qasm3"].startswith("OPENQASM 3.0;")
+
+
+def test_results_without_an_execution_have_none():
+    for stem in ("job_result_run", "job_result_zero_state_probability"):
+        assert decode_execution(_example(stem)) is None
 
 
 def test_a_probabilities_payload_decodes_to_the_numpy_probabilities():
@@ -800,6 +855,21 @@ def test_the_double_result_bodies_are_valid_and_decode(double, method):
     payload = response.json()
     _assert_valid("JobResultOut", payload)
     decode_result(payload, method=method, n_qubits=2, n_observables=2, job_id=job_id)
+
+
+@pytest.mark.parametrize("extra", [{}, {"ibm_options": {"twirling": {"enable_gates": True}}}])
+def test_the_double_ibm_result_body_with_its_execution_is_valid(extra):
+    router = FakeRouter(execution_extra=extra)
+    body = {**_request_body("sample"), "device": "ibm/ibm_fez"}
+    with httpx.Client(base_url=BASE_URL, transport=router.transport) as http:
+        job_id = _submit(http, body).json()["id"]
+        _poll_to_terminal(http, job_id)
+        payload = http.get(f"/v1/jobs/{job_id}/result", headers=_headers()).json()
+
+    _assert_valid("JobResultOut", payload)
+    execution = decode_execution(payload)
+    assert execution == router.jobs[job_id]["execution"]
+    assert all(execution[key] == value for key, value in extra.items())
 
 
 def _error_cases(router: FakeRouter, http: httpx.Client):

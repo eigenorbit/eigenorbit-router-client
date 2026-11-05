@@ -1,0 +1,123 @@
+{
+  "device_id": "ibm/ibm_fez",
+  "vendor": "ibm",
+  "vendor_updated_at": "2026-11-04T06:41:12Z",
+  "captured_at": "2026-11-04T06:45:45.318204Z",
+  "calibration": {
+    "backend_name": "ibm_fez",
+    "backend_version": "1.4.12",
+    "last_update_date": "2026-11-04T06:41:12+00:00",
+    "qubits": [
+      [
+        {
+          "date": "2026-11-04T05:12:40+00:00",
+          "name": "T1",
+          "unit": "us",
+          "value": 152.31
+        },
+        {
+          "date": "2026-11-04T05:20:03+00:00",
+          "name": "T2",
+          "unit": "us",
+          "value": 98.07
+        },
+        {
+          "date": "2026-11-04T06:41:12+00:00",
+          "name": "frequency",
+          "unit": "GHz",
+          "value": 4.912
+        },
+        {
+          "date": "2026-11-04T06:30:55+00:00",
+          "name": "readout_error",
+          "unit": "",
+          "value": 0.0123
+        },
+        {
+          "date": "2026-11-04T06:30:55+00:00",
+          "name": "readout_length",
+          "unit": "ns",
+          "value": 1560.0
+        }
+      ],
+      [
+        {
+          "date": "2026-11-04T05:12:40+00:00",
+          "name": "T1",
+          "unit": "us",
+          "value": 140.02
+        },
+        {
+          "date": "2026-11-04T05:20:03+00:00",
+          "name": "T2",
+          "unit": "us",
+          "value": null
+        },
+        {
+          "date": "2026-11-04T06:41:12+00:00",
+          "name": "frequency",
+          "unit": "GHz",
+          "value": 5.031
+        },
+        {
+          "date": "2026-11-04T06:30:55+00:00",
+          "name": "readout_error",
+          "unit": "",
+          "value": 0.0098
+        },
+        {
+          "date": "2026-11-04T06:30:55+00:00",
+          "name": "readout_length",
+          "unit": "ns",
+          "value": 1560.0
+        }
+      ]
+    ],
+    "gates": [
+      {
+        "qubits": [
+          0
+        ],
+        "gate": "sx",
+        "parameters": [
+          {
+            "date": "2026-11-04T06:02:18+00:00",
+            "name": "gate_error",
+            "unit": "",
+            "value": 0.000214
+          },
+          {
+            "date": "2026-11-04T06:41:12+00:00",
+            "name": "gate_length",
+            "unit": "ns",
+            "value": 32.0
+          }
+        ],
+        "name": "sx0"
+      },
+      {
+        "qubits": [
+          0,
+          1
+        ],
+        "gate": "cz",
+        "parameters": [
+          {
+            "date": "2026-11-04T06:15:31+00:00",
+            "name": "gate_error",
+            "unit": "",
+            "value": 0.00341
+          },
+          {
+            "date": "2026-11-04T06:41:12+00:00",
+            "name": "gate_length",
+            "unit": "ns",
+            "value": 68.0
+          }
+        ],
+        "name": "cz0_1"
+      }
+    ],
+    "general": []
+  }
+}

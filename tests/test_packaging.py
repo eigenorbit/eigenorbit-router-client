@@ -59,11 +59,11 @@ def test_no_requirement_comes_from_git_or_ssh():
 
 
 def test_the_dev_group_pins_the_eigenkit_the_router_worker_runs():
-    assert "eigenkit[datasets]==1.0.1" in _pyproject()["dependency-groups"]["dev"]
+    assert "eigenkit[datasets]==1.2.0" in _pyproject()["dependency-groups"]["dev"]
 
 
 def test_the_live_group_pins_the_eigenkit_the_router_worker_runs():
-    assert _pyproject()["dependency-groups"]["live"] == ["eigenkit[braket,qiskit]==1.0.1"]
+    assert _pyproject()["dependency-groups"]["live"] == ["eigenkit[braket,qiskit]==1.2.0"]
 
 
 def test_client_error_codes_is_a_package_export():

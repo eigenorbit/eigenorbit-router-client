@@ -1,0 +1,44 @@
+{
+  "job_id": "01a2c7e4-3b5f-7d21-9c4e-6f8a0b1d2e3f",
+  "method": "sample",
+  "bit_order": "qubit0_msb",
+  "result": {
+    "kind": "counts",
+    "n_qubits": 2,
+    "data": {
+      "00": 507,
+      "11": 493
+    }
+  },
+  "execution": {
+    "vendor_job_id": "d4example0job0ibm001",
+    "initial_layout": [
+      0,
+      1
+    ],
+    "final_layout": [
+      0,
+      1
+    ],
+    "active_qubits": [
+      0,
+      1
+    ],
+    "transpiled_qasm3": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\nbit[2] meas;\nrz(pi/2) $0;\nsx $0;\nrz(pi/2) $0;\nrz(pi/2) $1;\nsx $1;\nrz(pi/2) $1;\ncz $0, $1;\nrz(pi/2) $1;\nsx $1;\nrz(pi/2) $1;\nbarrier $0, $1;\nmeas[0] = measure $0;\nmeas[1] = measure $1;\n",
+    "seed_transpiler": 1234,
+    "optimization_level": 1,
+    "qiskit_version": "1.4.6",
+    "qiskit_ibm_runtime_version": "0.43.1",
+    "ibm_options": {
+      "dynamical_decoupling": {
+        "enable": true,
+        "sequence_type": "XY4"
+      },
+      "twirling": {
+        "enable_gates": true,
+        "num_randomizations": 10,
+        "shots_per_randomization": 100
+      }
+    }
+  }
+}

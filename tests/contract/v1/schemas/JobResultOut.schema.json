@@ -64,6 +64,265 @@
       "title": "CountsResult",
       "type": "object"
     },
+    "ExecutionOut": {
+      "description": "What the router ran on the vendor for one job: one transpiled circuit.\n\ninitial_layout[i] is the physical qubit logical qubit i starts on.\nfinal_layout[i] is the physical qubit holding logical qubit i at the end, where\nits measurement and observables are read.\nactive_qubits are the sorted physical qubits any non-barrier operation touched.\nibm_options are the dynamical decoupling and twirling options IBM stored with the\njob, null when it stored none.\nEvery field except vendor_job_id may be null when the router could not read it.",
+      "properties": {
+        "active_qubits": {
+          "anyOf": [
+            {
+              "items": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Active Qubits"
+        },
+        "final_layout": {
+          "anyOf": [
+            {
+              "items": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Final Layout"
+        },
+        "ibm_options": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/IbmOptionsOut"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "initial_layout": {
+          "anyOf": [
+            {
+              "items": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Initial Layout"
+        },
+        "optimization_level": {
+          "anyOf": [
+            {
+              "maximum": 3,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Optimization Level"
+        },
+        "qiskit_ibm_runtime_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Qiskit Ibm Runtime Version"
+        },
+        "qiskit_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Qiskit Version"
+        },
+        "seed_transpiler": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed Transpiler"
+        },
+        "transpiled_qasm3": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Transpiled Qasm3"
+        },
+        "vendor_job_id": {
+          "minLength": 1,
+          "title": "Vendor Job Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "vendor_job_id"
+      ],
+      "title": "ExecutionOut",
+      "type": "object"
+    },
+    "IbmDynamicalDecouplingOut": {
+      "description": "Dynamical decoupling options IBM stored with the job.",
+      "properties": {
+        "enable": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Enable"
+        },
+        "sequence_type": {
+          "anyOf": [
+            {
+              "enum": [
+                "XX",
+                "XpXm",
+                "XY4"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sequence Type"
+        }
+      },
+      "title": "IbmDynamicalDecouplingOut",
+      "type": "object"
+    },
+    "IbmOptionsOut": {
+      "description": "The dynamical decoupling and twirling options IBM stored with the job.\n\nOnly the keys IBM stored are present. Options IBM applies by default on the\nserver are not stored, and so not shown.",
+      "properties": {
+        "dynamical_decoupling": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/IbmDynamicalDecouplingOut"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "twirling": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/IbmTwirlingOut"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "IbmOptionsOut",
+      "type": "object"
+    },
+    "IbmTwirlingOut": {
+      "description": "Pauli twirling options IBM stored with the job.",
+      "properties": {
+        "enable_gates": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Enable Gates"
+        },
+        "enable_measure": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Enable Measure"
+        },
+        "num_randomizations": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Num Randomizations"
+        },
+        "shots_per_randomization": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Shots Per Randomization"
+        }
+      },
+      "title": "IbmTwirlingOut",
+      "type": "object"
+    },
     "Method": {
       "description": "Mirrors kit CompiledCircuit methods.",
       "enum": [
@@ -89,12 +348,23 @@
       ]
     }
   },
-  "description": "GET /v1/jobs/{job_id}/result. Returned as soon as status is completed.\n\nShapes by method: run -> [n_observables]; zero_state_probability -> [];\nprobabilities -> [2**n_qubits]; sample -> counts.",
+  "description": "GET /v1/jobs/{job_id}/result. Returned as soon as status is completed.\n\nShapes by method: run -> [n_observables]; zero_state_probability -> [];\nprobabilities -> [2**n_qubits]; sample -> counts.\n`execution` is what the router ran on the vendor, for IBM Quantum jobs; null otherwise.",
   "properties": {
     "bit_order": {
       "const": "qubit0_msb",
       "title": "Bit Order",
       "type": "string"
+    },
+    "execution": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ExecutionOut"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "job_id": {
       "format": "uuid",

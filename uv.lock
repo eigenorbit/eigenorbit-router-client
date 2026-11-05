@@ -450,16 +450,16 @@ wheels = [
 
 [[package]]
 name = "eigenkit"
-version = "1.0.1"
+version = "1.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
     { name = "pydantic" },
     { name = "scipy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d4/03/752abdcdf33f1d59721971736ea91f773ce975767a1d7b241c57f965ccac/eigenkit-1.0.1.tar.gz", hash = "sha256:d51c6e638aedbcefa31a7a59507fec53d55cc465bf170dd4f4c7145fd0a601d5", size = 715702, upload-time = "2026-10-13T14:29:38.358Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/03/1c/824149d1f0df7ab1955c902e0e54fe10ebf4f48b073fa7dffe6174640ffc/eigenkit-1.2.0.tar.gz", hash = "sha256:07efe1635b87cee0d4788a30274371d8b9010c8be2b29c074de9a266cdfde914", size = 783260, upload-time = "2026-11-05T13:52:47.091Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/30/b3/7db83ead978bceb8a9e47eb1c2a3ab20fb0754ddd18fabb5e95d4885b501/eigenkit-1.0.1-py3-none-any.whl", hash = "sha256:281e93b03fcdd9b720d054dee4f80d66aba954ec3f2a98eacac0143b9777fd43", size = 481099, upload-time = "2026-10-13T14:29:36.413Z" },
+    { url = "https://files.pythonhosted.org/packages/0d/1d/e4534250af38fe3cc45671ce0effc6fa9aaab78fb61d3491fe3b9897a108/eigenkit-1.2.0-py3-none-any.whl", hash = "sha256:a8019be03297be2dfabc7fd15f28740d62f92e70128e8b28c65655c0e6e9ec8a", size = 522833, upload-time = "2026-11-05T13:52:45.113Z" },
 ]
 
 [package.optional-dependencies]
@@ -507,13 +507,13 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "eigenkit", extras = ["datasets"], specifier = "==1.0.1" },
+    { name = "eigenkit", extras = ["datasets"], specifier = "==1.2.0" },
     { name = "jsonschema", specifier = ">=4.26,<5" },
     { name = "pytest", specifier = "==9.1.1" },
     { name = "python-semantic-release", specifier = ">=10.7.0" },
     { name = "ruff" },
 ]
-live = [{ name = "eigenkit", extras = ["braket", "qiskit"], specifier = "==1.0.1" }]
+live = [{ name = "eigenkit", extras = ["braket", "qiskit"], specifier = "==1.2.0" }]
 
 [[package]]
 name = "gitdb"
