@@ -1,9 +1,9 @@
 {
-  "description": "GET /v1/devices/{device_id}/calibration response: one stored calibration snapshot of\nan IBM Quantum device. vendor_updated_at is when the vendor published the calibration,\ncaptured_at is when the router stored it.",
+  "description": "GET /v1/devices/{device_id}/calibration response: one stored calibration snapshot of\nan IBM Quantum device or an Amazon Braket QPU. vendor_updated_at is when the vendor\npublished the calibration, captured_at is when the router stored it.",
   "properties": {
     "calibration": {
       "additionalProperties": true,
-      "description": "The vendor's calibration object exactly as published. For IBM Quantum these are the backend properties (backend_name, backend_version, last_update_date, qubits, gates, general), with every time as an RFC 3339 string.",
+      "description": "The vendor's calibration object exactly as published. For IBM Quantum these are the backend properties (backend_name, backend_version, last_update_date, qubits, gates, general), with every time as an RFC 3339 string. For an Amazon Braket QPU it is the device capabilities object as Braket publishes it (braketSchemaHeader, service, action, deviceParameters, paradigm, provider, standardized, and pulse on some devices), the same object the Braket SDK exposes as device properties.",
       "title": "Calibration",
       "type": "object"
     },

@@ -284,7 +284,8 @@ class FakeRouter:
             `ibm_options` with the 422 `extra_forbidden` of a router that has
             no such field.
         execution: What JobResultOut says about the vendor run: "send" (an
-            ExecutionOut for an IBM job, null for a Braket job), "null" (null
+            ExecutionOut for every job; a Braket job's carries only its task
+            ID, as the router's does on the simulators and IonQ), "null" (null
             for every job, as for results stored before the router recorded
             it) or "absent" (no `execution` field, as from an older router).
         execution_extra: Keys merged into every IBM job's ExecutionOut, as a
@@ -759,7 +760,7 @@ class FakeRouter:
             "execution": (
                 {**_ibm_execution(admitted[0].n_qubits), **self.execution_extra}
                 if _is_ibm(body["device"])
-                else None
+                else {"vendor_job_id": str(uuid.uuid4())}
             ),
         }
         self._idempotency[key] = (body, job_id)

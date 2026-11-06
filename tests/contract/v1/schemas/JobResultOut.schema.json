@@ -65,7 +65,7 @@
       "type": "object"
     },
     "ExecutionOut": {
-      "description": "What the router ran on the vendor for one job: one transpiled circuit.\n\ninitial_layout[i] is the physical qubit logical qubit i starts on.\nfinal_layout[i] is the physical qubit holding logical qubit i at the end, where\nits measurement and observables are read.\nactive_qubits are the sorted physical qubits any non-barrier operation touched.\nibm_options are the dynamical decoupling and twirling options IBM stored with the\njob, null when it stored none.\nEvery field except vendor_job_id may be null when the router could not read it.",
+      "description": "What the router ran on the vendor for one job: one transpiled or compiled program.\n\ninitial_layout[i] is the physical qubit logical qubit i starts on.\nfinal_layout[i] is the physical qubit holding logical qubit i at the end, where\nits measurement and observables are read.\nactive_qubits are the sorted physical qubits any non-barrier operation touched.\nibm_options are the dynamical decoupling and twirling options IBM stored with the\njob, null when it stored none.\nFor Braket, vendor_job_id is the task id (the task ARN without its prefix).\ntranspiled_qasm3 is the OpenQASM 3 program an IQM or AQT device compiled, and\ncompiled_quil the Quil program a Rigetti device compiled, both as Braket returned\nthem; active_qubits are then the physical qubits of transpiled_qasm3. The layouts\nand the transpiler, library and option fields are for IBM only.\nEvery field except vendor_job_id may be null when the router could not read it.",
       "properties": {
         "active_qubits": {
           "anyOf": [
@@ -82,6 +82,18 @@
           ],
           "default": null,
           "title": "Active Qubits"
+        },
+        "compiled_quil": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Compiled Quil"
         },
         "final_layout": {
           "anyOf": [
@@ -348,7 +360,7 @@
       ]
     }
   },
-  "description": "GET /v1/jobs/{job_id}/result. Returned as soon as status is completed.\n\nShapes by method: run -> [n_observables]; zero_state_probability -> [];\nprobabilities -> [2**n_qubits]; sample -> counts.\n`execution` is what the router ran on the vendor, for IBM Quantum jobs; null otherwise.",
+  "description": "GET /v1/jobs/{job_id}/result. Returned as soon as status is completed.\n\nShapes by method: run -> [n_observables]; zero_state_probability -> [];\nprobabilities -> [2**n_qubits]; sample -> counts.\n`execution` is what the router ran on the vendor, for IBM Quantum and Braket jobs;\nnull for results stored before the router recorded it.",
   "properties": {
     "bit_order": {
       "const": "qubit0_msb",
