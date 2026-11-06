@@ -174,9 +174,10 @@ ID (`vendor_job_id`), the physical qubits (`initial_layout`, `final_layout`,
 `active_qubits`), the transpiled circuit as OpenQASM 3 (`transpiled_qasm3`),
 `seed_transpiler`, `optimization_level` and the Qiskit versions. For a Braket
 job: the task ID (`vendor_job_id`); on IQM and AQT devices also the compiled
-OpenQASM 3 program (`transpiled_qasm3`) and its physical qubits
-(`active_qubits`); on Rigetti devices the compiled Quil program
-(`compiled_quil`).
+OpenQASM 3 program (`transpiled_qasm3`); on Rigetti devices the compiled Quil
+program (`compiled_quil`). On all three, the physical qubits the program
+touches (`active_qubits`) and the physical qubit each classical bit was
+measured on (`final_layout`).
 
 ## Saved models
 
