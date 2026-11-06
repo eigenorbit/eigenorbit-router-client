@@ -15,7 +15,10 @@
   "execution": {
     "vendor_job_id": "5f0c9a2e-7b1d-4c3a-9e8f-1a2b3c4d5e6f",
     "initial_layout": null,
-    "final_layout": null,
+    "final_layout": [
+      1,
+      2
+    ],
     "active_qubits": [
       1,
       2

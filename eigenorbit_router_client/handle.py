@@ -116,11 +116,13 @@ class RouterJobHandle:
         `optimization_level`, `qiskit_version` and
         `qiskit_ibm_runtime_version`. For a Braket job: the task ID
         (`vendor_job_id`); on IQM and AQT devices also the program the device
-        compiled, as OpenQASM 3 (`transpiled_qasm3`), and the physical qubits it
-        touches (`active_qubits`); on Rigetti devices the compiled Quil program
-        (`compiled_quil`). Every key but `vendor_job_id` may be None, and keys a
-        newer router adds are kept. None for a result stored before the router
-        recorded it, and from a router that does not send it.
+        compiled, as OpenQASM 3 (`transpiled_qasm3`); on Rigetti devices the
+        compiled Quil program (`compiled_quil`). On all three, the physical qubits
+        the program touches (`active_qubits`) and the physical qubit each
+        classical bit was measured on (`final_layout`). Every key but
+        `vendor_job_id` may be None, and keys a newer router adds are kept. None
+        for a result stored before the router recorded it, and from a router that
+        does not send it.
 
         Waits for the job and fetches its result as `result()` does. The two
         share that one fetch: after either has returned, neither sends anything.
