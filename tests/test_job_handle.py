@@ -4,6 +4,8 @@ The far end is the in-process FakeRouter. Request assertions filter by method
 and path, so the estimate request a compile sends does not break them.
 """
 
+import uuid
+
 import numpy as np
 import pytest
 from eigenkit import Circuit
@@ -546,10 +548,13 @@ def test_execution_does_not_change_the_result(fake_router):
     assert with_block.result().dtype == np.float64
 
 
-def test_a_braket_job_has_no_execution(fake_router):
+def test_a_braket_job_returns_its_task_id_as_the_execution(fake_router):
     handle = _submit(_router_circuit(), "run")
 
-    assert handle.execution() is None
+    execution = handle.execution()
+
+    assert set(execution) == {"vendor_job_id"}
+    assert str(uuid.UUID(execution["vendor_job_id"])) == execution["vendor_job_id"]
     assert handle.result().shape == (2,)
 
 

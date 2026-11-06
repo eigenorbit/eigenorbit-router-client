@@ -168,12 +168,15 @@ else is refused with `validation_error` before the job is created. Only IBM
 devices take `primitive_options`; on any other device `RouterConfig` raises
 `ValueError`.
 
-`handle.execution()` returns what the router ran on IBM for a finished job,
-from the same request as `handle.result()`: the IBM job ID
-(`vendor_job_id`), the physical qubits (`initial_layout`, `final_layout`,
+`handle.execution()` returns what the router ran on the vendor for a finished
+job, from the same request as `handle.result()`. For an IBM job: the IBM job
+ID (`vendor_job_id`), the physical qubits (`initial_layout`, `final_layout`,
 `active_qubits`), the transpiled circuit as OpenQASM 3 (`transpiled_qasm3`),
-`seed_transpiler`, `optimization_level` and the Qiskit versions. It is None
-for a Braket job.
+`seed_transpiler`, `optimization_level` and the Qiskit versions. For a Braket
+job: the task ID (`vendor_job_id`); on IQM and AQT devices also the compiled
+OpenQASM 3 program (`transpiled_qasm3`) and its physical qubits
+(`active_qubits`); on Rigetti devices the compiled Quil program
+(`compiled_quil`).
 
 ## Saved models
 
