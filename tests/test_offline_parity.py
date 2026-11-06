@@ -146,7 +146,9 @@ EXAMPLE_SCHEMAS = {
     "error_ibm_connection_busy": "ErrorEnvelope",
     "devices_list_ibm": "DeviceListOut",
     "device_calibration_ibm": "DeviceCalibrationOut",
+    "device_calibration_braket": "DeviceCalibrationOut",
     "job_result_ibm_sample": "JobResultOut",
+    "job_result_braket_iqm_sample": "JobResultOut",
 }
 
 METHODS = ("run", "sample", "probabilities", "zero_state_probability")
@@ -580,6 +582,22 @@ def test_the_ibm_sample_example_decodes_its_counts_and_its_execution():
     assert execution == payload["execution"]
     assert execution["vendor_job_id"]
     assert execution["transpiled_qasm3"].startswith("OPENQASM 3.0;")
+
+
+def test_the_braket_iqm_sample_example_decodes_its_counts_and_its_execution():
+    payload = _example("job_result_braket_iqm_sample")
+
+    counts = decode_result(
+        payload, method="sample", n_qubits=2, n_observables=1, job_id=payload["job_id"]
+    )
+    execution = decode_execution(payload)
+
+    assert counts == payload["result"]["data"]
+    assert execution == payload["execution"]
+    assert not execution["vendor_job_id"].startswith("arn:")
+    assert execution["transpiled_qasm3"].startswith("OPENQASM 3.0;")
+    assert execution["active_qubits"]
+    assert "compiled_quil" in execution
 
 
 def test_results_without_an_execution_have_none():
