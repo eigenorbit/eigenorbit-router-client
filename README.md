@@ -99,8 +99,9 @@ parameter-shift gradient evaluation is a separate paid job.
 
 When a new version of the EigenOrbit Router terms is published, your scripts
 keep running until the date it takes effect. Until you accept it, a submit and
-an estimate show one `TermsWarning` per process with the version, the address
-where you accept it and that date:
+an estimate show a `TermsWarning` with the version, the address where you
+accept it and that date. Python shows it once per calling line, so a loop of
+jobs prints it once, and it never fails the call:
 
 ```
 TermsWarning: Accept the EigenOrbit Router terms 2026-11-18 at

@@ -88,3 +88,16 @@ def test_polling_a_job_never_warns(fake_router):
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         http.get_job(job["id"])
+
+
+def test_the_notice_never_fails_a_request_when_warnings_are_errors(fake_router, caplog):
+    # `python -W error` or pytest's `filterwarnings = error`: the job is admitted and
+    # holds funds by the time the notice is read, so the answer must still come back.
+    fake_router.terms_notice = NOTICE
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        job = _http().submit(BODY, idempotency_key="k1")
+
+    assert job["id"]
+    assert NOTICE in caplog.text
