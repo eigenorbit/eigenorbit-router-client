@@ -370,7 +370,22 @@ class FakeRouter:
 
     # ---- entry point ----
 
+    # The sentence the router sends in EO-Terms-Notice on a successful submit or
+    # estimate while the account is in the grace period of new terms; None: no header.
+    terms_notice: str | None = None
+
     def handle(self, request: httpx.Request) -> httpx.Response:
+        response = self._handle_counted(request)
+        if (
+            self.terms_notice is not None
+            and request.method == "POST"
+            and request.url.path in ("/v1/jobs", "/v1/jobs/estimate")
+            and response.status_code < 300
+        ):
+            response.headers["EO-Terms-Notice"] = self.terms_notice
+        return response
+
+    def _handle_counted(self, request: httpx.Request) -> httpx.Response:
         if request.method != "POST" or request.url.path != "/v1/jobs":
             return self._handle_locked(request)
         with self._flight_lock:

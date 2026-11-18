@@ -5,16 +5,20 @@ from __future__ import annotations
 import platform
 import threading
 import time
+import warnings
 from importlib import metadata
 from typing import Any
 
 import httpx
 
 from .config import RouterConfig, resolve_api_key, resolve_base_url
-from .errors import RouterError
+from .errors import RouterError, TermsWarning
 
 
 PROTOCOL_VERSION = 1
+# The router's sentence about new terms, on a successful submit or estimate while the
+# account is in the grace period of a new version of the router terms.
+TERMS_NOTICE_HEADER = "EO-Terms-Notice"
 POLL_DELAYS = (1.0, 5.0, 30.0)
 TERMINAL_STATUSES = frozenset({"completed", "failed", "cancelled", "rejected"})
 RETRY_DELAYS = (1.0, 5.0, 30.0)
@@ -139,6 +143,12 @@ class RouterHttpClient:
                 raise RouterError.from_response(
                     response, job_id=job_id, sent_ibm_options=sent_ibm_options
                 )
+            notice = response.headers.get(TERMS_NOTICE_HEADER)
+            if notice:
+                # The fixed stacklevel is deliberate: Python's default filter then
+                # shows the sentence once per process, so a loop of submissions is
+                # not flooded.
+                warnings.warn(notice, TermsWarning, stacklevel=2)
             return response
         if last_response is not None:
             raise RouterError.from_response(

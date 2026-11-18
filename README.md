@@ -95,6 +95,23 @@ anything. Every job holds its estimate on your balance first, so the router
 never runs a job your balance cannot cover. Each row of a batch and each
 parameter-shift gradient evaluation is a separate paid job.
 
+## New router terms
+
+When a new version of the EigenOrbit Router terms is published, your scripts
+keep running until the date it takes effect. Until you accept it, a submit and
+an estimate show one `TermsWarning` per process with the version, the address
+where you accept it and that date:
+
+```
+TermsWarning: Accept the EigenOrbit Router terms 2026-11-18 at
+https://router.eigenorbit.com/ before 2026-11-25 (UTC). From that date this
+account cannot run new jobs until you accept them.
+```
+
+Accept the terms in the web app and the warning stops. From the date on, a
+job from an account that has not accepted them fails with `RouterError` code
+`terms_not_accepted`.
+
 ## Jobs
 
 Every call blocks until its job finishes. To come back to a job later:

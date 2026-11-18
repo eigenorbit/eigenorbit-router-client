@@ -15,6 +15,14 @@ SUPPORT_EMAIL = "support@eigenorbit.com"
 RESULT_RETENTION_DAYS = 90
 
 
+class TermsWarning(UserWarning):
+    """The router's notice that a new version of its terms is about to be enforced.
+
+    The message is the router's own sentence: the version to accept, the web app
+    where it is accepted, and the date from which new jobs are refused.
+    """
+
+
 class RouterError(RuntimeError):
     """A router call failed, or a router job ended without a result.
 
