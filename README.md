@@ -104,8 +104,8 @@ accept it and that date. Python shows it once per calling line, so a loop of
 jobs prints it once, and it never fails the call:
 
 ```
-TermsWarning: Accept the EigenOrbit Router terms 2026-11-18 at
-https://router.eigenorbit.com/ before 2026-11-25 (UTC). From that date this
+TermsWarning: Accept the EigenOrbit Router terms 2026-11-20 at
+https://router.eigenorbit.com/ before 2026-11-27 (UTC). From that date this
 account cannot run new jobs until you accept them.
 ```
 
