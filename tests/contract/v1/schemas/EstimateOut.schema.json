@@ -1,6 +1,7 @@
 {
   "$defs": {
     "ErrorCode": {
+      "description": "A stable error code. Branch on the code, never on the message.",
       "enum": [
         "unauthenticated",
         "idempotency_key_required",
@@ -45,6 +46,8 @@
         "ibm_unreachable",
         "ibm_validation_unavailable",
         "ibm_connection_busy",
+        "request_too_large",
+        "rate_limited",
         "ibm_credentials_rejected",
         "ibm_quota_exhausted",
         "ibm_target_mismatch",
@@ -54,7 +57,7 @@
       "type": "string"
     },
     "Method": {
-      "description": "Mirrors kit CompiledCircuit methods.",
+      "description": "What the job computes. `run`: one expectation value per observable. `sample`:\nmeasurement counts. `probabilities`: the probability of every basis state.\n`zero_state_probability`: the probability of the all-zeros state.",
       "enum": [
         "run",
         "sample",
@@ -65,9 +68,10 @@
       "type": "string"
     }
   },
-  "description": "POST /v1/jobs/estimate response. Creates no job and no hold.\n\nvendor_cost_usd_micro + fee_usd_micro == estimate_usd_micro.",
+  "description": "The price of a job and whether a submit would be accepted now. Amounts are\nintegers in micro-USD: 1000000 is $1. `vendor_cost_usd_micro` plus `fee_usd_micro`\nequals `estimate_usd_micro`.",
   "properties": {
     "available_usd_micro": {
+      "description": "Your balance minus your active holds, at the time of the call. 0 for an IBM Quantum job, whose estimate does not read the balance.",
       "title": "Available Usd Micro",
       "type": "integer"
     },
@@ -76,10 +80,12 @@
       "type": "string"
     },
     "estimate_usd_micro": {
+      "description": "The amount a submit would hold from your balance. 0 for an IBM Quantum job.",
       "title": "Estimate Usd Micro",
       "type": "integer"
     },
     "fee_usd_micro": {
+      "description": "The EigenOrbit fee inside the estimate.",
       "minimum": 0,
       "title": "Fee Usd Micro",
       "type": "integer"
@@ -88,6 +94,7 @@
       "$ref": "#/$defs/Method"
     },
     "price_version": {
+      "description": "The price version used, `<device>@<version>`, for example `braket/sv1@1`. A job keeps the version it was admitted with.",
       "title": "Price Version",
       "type": "string"
     },
@@ -96,6 +103,7 @@
       "type": "integer"
     },
     "vendor_cost_usd_micro": {
+      "description": "The vendor's cost inside the estimate, rounded up.",
       "minimum": 0,
       "title": "Vendor Cost Usd Micro",
       "type": "integer"
@@ -108,7 +116,8 @@
         {
           "type": "null"
         }
-      ]
+      ],
+      "description": "Null when a submit would be accepted now. Otherwise the error code the submit would be refused with, the first that applies of `device_unavailable`, `method_not_supported`, `shots_invalid`, `terms_not_accepted`, `ibm_connection_invalid`, `ibm_account_not_connected`, `concurrency_limit_exceeded`, `key_budget_exceeded`, `negative_balance` and `insufficient_balance`."
     }
   },
   "required": [

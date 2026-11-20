@@ -126,7 +126,7 @@
       "type": "object"
     },
     "Method": {
-      "description": "Mirrors kit CompiledCircuit methods.",
+      "description": "What the job computes. `run`: one expectation value per observable. `sample`:\nmeasurement counts. `probabilities`: the probability of every basis state.\n`zero_state_probability`: the probability of the all-zeros state.",
       "enum": [
         "run",
         "sample",
@@ -138,14 +138,16 @@
     }
   },
   "additionalProperties": false,
-  "description": "Body of both POST /v1/jobs/estimate and POST /v1/jobs.\n\ncircuit_spec is kit's circuit_spec_to_json output (n_qubits, n_weights,\nn_inputs, gates); observables is kit's observables_to_json output. The\nschema accepts 2-D weights/inputs, but Braket devices reject them with\nbatch_not_supported. ibm_options applies to IBM Quantum devices only; any\nother device refuses it.",
+  "description": "The body of `POST /v1/jobs/estimate` and `POST /v1/jobs`: the device, the method,\nthe shots, and the circuit with its observables and parameter values. eigenkit\nbuilds this body. Unknown fields answer 422 `validation_error`.",
   "properties": {
     "circuit_spec": {
       "additionalProperties": true,
+      "description": "The circuit, as eigenkit produces it: its `router` provider builds this value. The format is not specified here.",
       "title": "Circuit Spec",
       "type": "object"
     },
     "device": {
+      "description": "A device ID from `GET /v1/devices`, for example `braket/sv1` or `ibm/ibm_fez`.",
       "maxLength": 64,
       "pattern": "^[a-z0-9]+/[a-z0-9_-]+$",
       "title": "Device",
@@ -160,7 +162,8 @@
           "type": "null"
         }
       ],
-      "default": null
+      "default": null,
+      "description": "Qiskit Runtime options, for an IBM Quantum device only. Any other device answers 422 `validation_error`. Absent or null sends no option."
     },
     "inputs": {
       "anyOf": [
@@ -180,12 +183,14 @@
           "type": "array"
         }
       ],
+      "description": "The circuit's input values, one number per input, or `[]` when the circuit has none. Send a flat array, as for `weights`.",
       "title": "Inputs"
     },
     "method": {
       "$ref": "#/$defs/Method"
     },
     "observables": {
+      "description": "The observables, as eigenkit produces them: its `router` provider builds this value. The format is not specified here. At least one, for every method.",
       "items": {
         "additionalProperties": true,
         "type": "object"
@@ -195,6 +200,7 @@
       "type": "array"
     },
     "shots": {
+      "description": "Shots for the vendor task. 0 asks a simulator for exact results with `run`, `probabilities` and `zero_state_probability`. `GET /v1/devices` lists the shots each method accepts on each device.",
       "minimum": 0,
       "title": "Shots",
       "type": "integer"
@@ -217,6 +223,7 @@
           "type": "array"
         }
       ],
+      "description": "The circuit's weight values, one number per weight. Send a flat array: a device runs one parameter set per job, and a 2-D array answers 422 `batch_not_supported`.",
       "title": "Weights"
     }
   },

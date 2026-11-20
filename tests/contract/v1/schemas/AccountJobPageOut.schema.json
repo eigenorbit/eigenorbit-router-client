@@ -38,6 +38,7 @@
               "type": "null"
             }
           ],
+          "description": "What the job cost you: null while `billing` is `held` or null, the charged amount once `settled`, and 0 once `released`.",
           "title": "Actual Cost Usd Micro"
         },
         "billing": {
@@ -48,7 +49,8 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "description": "The job's hold on your balance. Null when no hold was ever placed, as for an IBM Quantum job or a job rejected for the balance."
         },
         "completed_at": {
           "anyOf": [
@@ -60,6 +62,7 @@
               "type": "null"
             }
           ],
+          "description": "When the job reached a terminal status. Null until then.",
           "title": "Completed At"
         },
         "created_at": {
@@ -81,6 +84,7 @@
             }
           ],
           "default": null,
+          "description": "`own`: the job ran on the IBM Quantum account you connected. `organization`: Reserved. Null for an Amazon Braket job.",
           "title": "Credential Source"
         },
         "device": {
@@ -95,9 +99,11 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "description": "Why the job failed or was rejected. Null for any other status."
         },
         "estimate_usd_micro": {
+          "description": "The job's estimated cost at submission, in micro-USD. A job that is charged has a hold of this amount placed on your balance.",
           "minimum": 0,
           "title": "Estimate Usd Micro",
           "type": "integer"
@@ -112,6 +118,7 @@
               "type": "null"
             }
           ],
+          "description": "The EigenOrbit fee inside `actual_cost_usd_micro`. Null until `billing` is `settled` or `released`.",
           "title": "Fee Usd Micro"
         },
         "ibm_usage_seconds": {
@@ -124,9 +131,11 @@
             }
           ],
           "default": null,
+          "description": "The IBM quantum time the job used, in seconds with millisecond precision, as IBM reports it. Null until IBM reports it, and for an Amazon Braket job.",
           "title": "Ibm Usage Seconds"
         },
         "id": {
+          "description": "The job ID.",
           "format": "uuid",
           "title": "Id",
           "type": "string"
@@ -138,6 +147,7 @@
           "$ref": "#/$defs/Method"
         },
         "price_version": {
+          "description": "The price version the job was admitted with, for example `braket/sv1@1`.",
           "title": "Price Version",
           "type": "string"
         },
@@ -152,6 +162,7 @@
             }
           ],
           "default": null,
+          "description": "When the job's result and request are, or were, deleted. Set once the job is terminal and null while it runs. The job itself, with its status and costs, stays readable after the deletion.",
           "title": "Result Expires At"
         },
         "shots": {
@@ -177,6 +188,7 @@
               "type": "null"
             }
           ],
+          "description": "The vendor's cost inside `actual_cost_usd_micro`. Null until `billing` is `settled` or `released`.",
           "title": "Vendor Cost Usd Micro"
         }
       },
@@ -202,7 +214,7 @@
       "type": "object"
     },
     "BillingStatus": {
-      "description": "Public billing vocabulary; null on a job means no hold was placed.",
+      "description": "The job's hold on your balance. `held`: the estimate is reserved. `settled`: the\nactual cost was charged and the rest of the hold returned. `released`: the whole hold\nwas returned and nothing was charged.",
       "enum": [
         "held",
         "settled",
@@ -212,7 +224,7 @@
       "type": "string"
     },
     "ErrorCategory": {
-      "description": "Who or what stopped a job. Four fixed ASCII literals.",
+      "description": "Who or what stopped a job: `rejected` (an admission rule, such as the balance),\n`circuit` (your circuit or job parameters), `vendor` (the vendor) or `internal` (the\nrouter).",
       "enum": [
         "rejected",
         "circuit",
@@ -223,6 +235,7 @@
       "type": "string"
     },
     "ErrorCode": {
+      "description": "A stable error code. Branch on the code, never on the message.",
       "enum": [
         "unauthenticated",
         "idempotency_key_required",
@@ -267,6 +280,8 @@
         "ibm_unreachable",
         "ibm_validation_unavailable",
         "ibm_connection_busy",
+        "request_too_large",
+        "rate_limited",
         "ibm_credentials_rejected",
         "ibm_quota_exhausted",
         "ibm_target_mismatch",
@@ -276,7 +291,7 @@
       "type": "string"
     },
     "JobError": {
-      "description": "Why a job failed or was rejected. `code` is always one of the job error codes.\n\n`category` says who or what stopped the job: `rejected` (an admission\nrule), `circuit` (the user's circuit or job parameters), `vendor` or\n`internal`. It always agrees with `code` (app.contract.errors.category_for).",
+      "description": "Why a job failed or was rejected. `code` is the error code and `category` says who\nor what stopped the job: `rejected` (an admission rule, such as the balance),\n`circuit` (your circuit or job parameters), `vendor` (the vendor) or `internal` (the\nrouter). Branch on `code` for logic and on `category` for display.",
       "properties": {
         "category": {
           "$ref": "#/$defs/ErrorCategory"
@@ -298,7 +313,7 @@
       "type": "object"
     },
     "JobStatus": {
-      "description": "Public job status vocabulary.",
+      "description": "The status of a job. `queued`: accepted, not yet running at the vendor. `running`:\nthe vendor is running it. `completed`: the result is available. `failed`: the vendor\nor the router could not produce a result, and `error` says why. `cancelled`: the job\nwas cancelled, normally at your request. `rejected`: refused before it reached the\nvendor, and `error` says why. `completed`, `failed`, `cancelled` and `rejected` are\nterminal.",
       "enum": [
         "queued",
         "running",
@@ -311,7 +326,7 @@
       "type": "string"
     },
     "Method": {
-      "description": "Mirrors kit CompiledCircuit methods.",
+      "description": "What the job computes. `run`: one expectation value per observable. `sample`:\nmeasurement counts. `probabilities`: the probability of every basis state.\n`zero_state_probability`: the probability of the all-zeros state.",
       "enum": [
         "run",
         "sample",

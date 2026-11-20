@@ -1,0 +1,10 @@
+{
+  "error": {
+    "code": "request_too_large",
+    "message": "The job is larger than the router accepts",
+    "details": {
+      "field": "circuit_spec.gates",
+      "max_items": 100000
+    }
+  }
+}
