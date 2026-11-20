@@ -336,7 +336,7 @@
       "type": "object"
     },
     "Method": {
-      "description": "Mirrors kit CompiledCircuit methods.",
+      "description": "What the job computes. `run`: one expectation value per observable. `sample`:\nmeasurement counts. `probabilities`: the probability of every basis state.\n`zero_state_probability`: the probability of the all-zeros state.",
       "enum": [
         "run",
         "sample",
@@ -360,7 +360,7 @@
       ]
     }
   },
-  "description": "GET /v1/jobs/{job_id}/result. Returned as soon as status is completed.\n\nShapes by method: run -> [n_observables]; zero_state_probability -> [];\nprobabilities -> [2**n_qubits]; sample -> counts.\n`execution` is what the router ran on the vendor, for IBM Quantum and Braket jobs;\nnull for results stored before the router recorded it.",
+  "description": "The result of a completed job. `bit_order` is always `qubit0_msb`: in every\nbitstring and basis-state index, qubit 0 is the leftmost, most significant bit, as in\neigenkit. `result` depends on the method: `run` gives an array of shape\n`[n_observables]`, one expectation value per observable in request order;\n`zero_state_probability` an array of shape `[]`; `probabilities` an array of shape\n`[2**n_qubits]`; `sample` counts. `execution` is what the router ran at the vendor,\nand is null for results stored before the router recorded it.",
   "properties": {
     "bit_order": {
       "const": "qubit0_msb",

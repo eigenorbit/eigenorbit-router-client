@@ -1,5 +1,5 @@
 {
-  "description": "GET /v1/account/terms response: the caller's acceptance of the router terms.\n\n`accepted` says whether the caller accepted `current_version`, and `accepted_at`\nis when (null when not). `last_accepted_version` is the most recent version the\ncaller ever accepted (null when never), so a client can tell a first acceptance\nfrom a re-acceptance after a new version.",
+  "description": "GET /v1/account/terms response: the caller's acceptance of the router terms.\n\n`accepted` says whether the caller accepted `current_version`, and `accepted_at`\nis when (null when not). `last_accepted_version` is the most recent version the\ncaller ever accepted (null when never), so a client can tell a first acceptance\nfrom a re-acceptance after a new version.\n\n`must_accept_by` is set while the caller is in the grace period of a new version:\nthey accepted an earlier version, and the newer ones are not enforced\nyet. It is the date (00:00 UTC) from which they are refused until they accept\n`current_version`. Null when `accepted` is true and when there is no grace.",
   "properties": {
     "accepted": {
       "title": "Accepted",
@@ -36,6 +36,18 @@
       ],
       "title": "Last Accepted Version"
     },
+    "must_accept_by": {
+      "anyOf": [
+        {
+          "format": "date",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Must Accept By"
+    },
     "text_sha256": {
       "pattern": "^[0-9a-f]{64}$",
       "title": "Text Sha256",
@@ -47,7 +59,8 @@
     "text_sha256",
     "accepted",
     "accepted_at",
-    "last_accepted_version"
+    "last_accepted_version",
+    "must_accept_by"
   ],
   "title": "TermsStatusOut",
   "type": "object"

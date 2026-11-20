@@ -5,7 +5,7 @@ from importlib import metadata as _metadata
 from ._client import PROTOCOL_VERSION
 from .backend import RouterBackend, RouterCompiled
 from .config import DEFAULT_BASE_URL, RouterConfig
-from .errors import CLIENT_ERROR_CODES, RouterError
+from .errors import CLIENT_ERROR_CODES, RouterError, TermsWarning
 from .handle import RouterJobHandle
 
 
@@ -23,6 +23,7 @@ __all__ = [
     "RouterConfig",
     "RouterError",
     "RouterJobHandle",
+    "TermsWarning",
     "__version__",
 ]
 

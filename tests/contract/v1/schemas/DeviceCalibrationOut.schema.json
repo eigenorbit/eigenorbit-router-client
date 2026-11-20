@@ -1,5 +1,5 @@
 {
-  "description": "GET /v1/devices/{device_id}/calibration response: one stored calibration snapshot of\nan IBM Quantum device or an Amazon Braket QPU. vendor_updated_at is when the vendor\npublished the calibration, captured_at is when the router stored it.",
+  "description": "One stored calibration snapshot of an IBM Quantum device or an Amazon Braket QPU.\n`vendor_updated_at` is when the vendor published the calibration, and `captured_at`\nwhen the router stored it.",
   "properties": {
     "calibration": {
       "additionalProperties": true,

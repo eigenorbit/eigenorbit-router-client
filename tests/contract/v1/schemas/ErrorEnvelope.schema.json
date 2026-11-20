@@ -1,16 +1,20 @@
 {
   "$defs": {
     "ErrorBody": {
+      "description": "An error. Branch on `code`, never on `message`.",
       "properties": {
         "code": {
-          "$ref": "#/$defs/ErrorCode"
+          "$ref": "#/$defs/ErrorCode",
+          "description": "A stable error code. Each operation lists the codes it can answer with its error responses."
         },
         "details": {
           "additionalProperties": true,
+          "description": "Data about the error, depending on `code`. Always an object, possibly empty.",
           "title": "Details",
           "type": "object"
         },
         "message": {
+          "description": "A human-readable explanation. It may change at any time.",
           "title": "Message",
           "type": "string"
         }
@@ -23,6 +27,7 @@
       "type": "object"
     },
     "ErrorCode": {
+      "description": "A stable error code. Branch on the code, never on the message.",
       "enum": [
         "unauthenticated",
         "idempotency_key_required",
@@ -67,6 +72,8 @@
         "ibm_unreachable",
         "ibm_validation_unavailable",
         "ibm_connection_busy",
+        "request_too_large",
+        "rate_limited",
         "ibm_credentials_rejected",
         "ibm_quota_exhausted",
         "ibm_target_mismatch",
@@ -76,7 +83,7 @@
       "type": "string"
     }
   },
-  "description": "Every non-2xx response body.",
+  "description": "The body of every error response.",
   "properties": {
     "error": {
       "$ref": "#/$defs/ErrorBody"

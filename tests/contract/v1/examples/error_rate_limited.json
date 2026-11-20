@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "rate_limited",
+    "message": "Too many requests. Retry after the time in the Retry-After header.",
+    "details": {
+      "retry_after_seconds": 40
+    }
+  }
+}

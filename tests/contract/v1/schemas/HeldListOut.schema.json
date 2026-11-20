@@ -43,7 +43,7 @@
       "type": "object"
     },
     "Method": {
-      "description": "Mirrors kit CompiledCircuit methods.",
+      "description": "What the job computes. `run`: one expectation value per observable. `sample`:\nmeasurement counts. `probabilities`: the probability of every basis state.\n`zero_state_probability`: the probability of the all-zeros state.",
       "enum": [
         "run",
         "sample",
