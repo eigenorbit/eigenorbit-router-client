@@ -131,16 +131,15 @@ def decode_fock_counts(
     if not isinstance(payload, dict):
         raise invalid("is not a JSON object")
     if payload.get("method") != "photonic_sample":
-        raise invalid(
-            f"is for method {payload.get('method')!r}, expected 'photonic_sample'"
-        )
+        raise invalid("is for a method other than 'photonic_sample'")
     result = payload.get("result")
     if not isinstance(result, dict):
         raise invalid("has no result object")
     if result.get("kind") != "fock_counts":
         raise invalid("is not fock_counts")
-    if result.get("n_modes") != n_modes or isinstance(result.get("n_modes"), bool):
-        raise invalid(f"has n_modes {result.get('n_modes')!r}, expected {n_modes}")
+    result_modes = result.get("n_modes")
+    if type(result_modes) is not int or result_modes != n_modes:
+        raise invalid(f"has an n_modes that is not the requested {n_modes}")
     data = result.get("data")
     if not isinstance(data, list) or len(data) != n_rows:
         raise invalid(f"does not hold a list of {n_rows} rows")
