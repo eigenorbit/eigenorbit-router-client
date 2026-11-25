@@ -13,6 +13,14 @@ yet: the double accepts the shape the router announced for it (an
 twirling's `num_randomizations * shots_per_randomization` equal to the shots)
 and answers anything else with a 422 `validation_error`.
 
+The method `photonic_sample` runs on the five `quandela/` devices only, and those
+run nothing else. A job on one is free, like an IBM job, and its result is
+`fock_counts`: one object per input row, built by `fock_counts_oracle`, a
+deterministic stand-in for a sampler whose counts follow the row, so a test can
+tell a wrong row order from a right one. `quandela_access` False answers every
+submit with the 403 of an account outside the limited preview, and `empty_rows`
+names rows with no surviving shot (`{}`).
+
 Knobs are plain attributes, so a test can change them after construction.
 """
 
@@ -23,6 +31,7 @@ import re
 import threading
 import time
 import uuid
+from collections.abc import Sequence
 from datetime import datetime, timezone
 from typing import Any
 
@@ -30,10 +39,23 @@ import httpx
 import numpy as np
 from eigenkit.core.backends.numpy_backend import NumpySimulator
 from eigenkit.core.wire import circuit_spec_from_json, observables_from_json
+from eigenkit.photonics.wire import photonic_spec_from_json
 
 
 VALID_KEY = "eo_test_" + "A" * 43
 ALL_METHODS = frozenset({"run", "sample", "probabilities", "zero_state_probability"})
+PHOTONIC_METHOD = "photonic_sample"
+# Device -> (most shots per run, most input rows per job).
+QUANDELA_DEVICES: dict[str, tuple[int, int]] = {
+    "quandela/sim_slos": (1_000_000, 500),
+    "quandela/sim_belenos": (1_000_000, 16),
+    "quandela/sim_ascella": (1_000_000, 16),
+    "quandela/qpu_belenos": (100_000, 16),
+    "quandela/qpu_ascella": (100_000, 16),
+}
+DEVICE_ACCESS_MESSAGE = (
+    "This device is in limited preview and is not available to your account."
+)
 MAX_SHOTS = 100_000
 # Methods whose shot range starts at 1 on every device (contract section 4).
 METHOD_MIN_SHOTS = {"zero_state_probability": 1, "sample": 1}
@@ -91,6 +113,14 @@ _JOB_ROUTE = re.compile(r"/v1/jobs/(?P<job_id>[^/]+)(?P<suffix>/result|/cancel)?
 
 def _is_ibm(device: str) -> bool:
     return device.startswith("ibm/")
+
+
+def _is_quandela(device: str) -> bool:
+    return device.startswith("quandela/")
+
+
+def _is_batch(values: list) -> bool:
+    return any(isinstance(value, list) for value in values)
 
 
 def _now() -> str:
@@ -173,6 +203,13 @@ def _ibm_options_rejection(body: dict) -> httpx.Response | None:
     return None
 
 
+_EXECUTION_KEYS = (
+    "vendor_job_id", "initial_layout", "final_layout", "active_qubits", "transpiled_qasm3",
+    "compiled_quil", "seed_transpiler", "optimization_level", "qiskit_version",
+    "qiskit_ibm_runtime_version", "ibm_options",
+)
+
+
 def _ibm_execution(n_qubits: int) -> dict[str, Any]:
     """An ExecutionOut (contract section 8) for an IBM job on qubits 0..n-1."""
     qubits = list(range(n_qubits))
@@ -192,6 +229,13 @@ def _ibm_execution(n_qubits: int) -> dict[str, Any]:
         "qiskit_version": "1.4.6",
         "qiskit_ibm_runtime_version": "0.43.1",
     }
+
+
+def _quandela_execution() -> dict[str, Any]:
+    """An ExecutionOut of a Quandela job: the vendor job id, every other field null."""
+    out: dict[str, Any] = {key: None for key in _EXECUTION_KEYS}
+    out["vendor_job_id"] = str(uuid.uuid4())
+    return out
 
 
 def upgrade_message(protocol_min: int, protocol_max: int) -> str:
@@ -218,6 +262,21 @@ def largest_remainder_counts(probabilities: np.ndarray, shots: int, n_qubits: in
         for i, count in enumerate(floors)
         if count > 0
     }
+
+
+def fock_counts_oracle(
+    input_state: Sequence[int], row: Sequence[float], shots: int
+) -> dict[str, int]:
+    """Deterministic counts of one row: `moved` shots land on the reversed input
+    state and the rest on the input state. `moved` follows the row, so two rows
+    differ and a test sees a wrong row order. Zero counts are left out."""
+    moved = int(round(sum(row) * 1000)) % (shots + 1)
+    counts: dict[str, int] = {}
+    for state, count in ((list(input_state), shots - moved), (list(input_state)[::-1], moved)):
+        if count:
+            key = ",".join(str(n) for n in state)
+            counts[key] = counts.get(key, 0) + count
+    return counts
 
 
 class FakeRouter:
@@ -290,6 +349,13 @@ class FakeRouter:
             it) or "absent" (no `execution` field, as from an older router).
         execution_extra: Keys merged into every IBM job's ExecutionOut, as a
             newer router may add.
+        quandela_access: False answers a submit to a `quandela/` device with the
+            403 `device_access_restricted` of an account outside the limited
+            preview, and the estimate reports it as its would_reject_reason. A
+            Quandela job is free: estimate 0, billing null, no costs; its
+            `credential_source` is `organization` and `ibm_usage_seconds` null.
+        empty_rows: Rows (by index in `inputs`) of a `photonic_sample` result
+            that come back as `{}`, as a row in which no shot survived does.
 
     Attributes:
         max_in_flight: The most POST /v1/jobs handled at the same time.
@@ -304,6 +370,7 @@ class FakeRouter:
         complete_billing: str = "settled",
         devices: frozenset[str] = frozenset(
             {"braket/sv1", "braket/dm1", "braket/ionq_forte", "ibm/ibm_fez"}
+            | QUANDELA_DEVICES.keys()
         ),
         supported_methods: frozenset[str] = ALL_METHODS,
         estimate_usd_micro: int = 90_000,
@@ -328,6 +395,8 @@ class FakeRouter:
         ibm_options_supported: bool = True,
         execution: str = "send",
         execution_extra: dict[str, Any] | None = None,
+        quandela_access: bool = True,
+        empty_rows: frozenset[int] = frozenset(),
     ):
         self.status_steps = status_steps
         self.fail_with = fail_with
@@ -356,6 +425,8 @@ class FakeRouter:
         self.ibm_options_supported = ibm_options_supported
         self.execution = execution
         self.execution_extra = dict(execution_extra or {})
+        self.quandela_access = quandela_access
+        self.empty_rows = frozenset(empty_rows)
         self.max_in_flight = 0
         self.terminal_order: list[str] = []
         self._in_flight = 0
@@ -565,12 +636,19 @@ class FakeRouter:
         missing = sorted(REQUEST_FIELDS - set(body))
         if missing:
             return None, _validation_error(["body", missing[0]], "Field required")
-        if body["method"] not in ALL_METHODS:
+        if body["method"] not in ALL_METHODS | {PHOTONIC_METHOD}:
             return None, _validation_error(["body", "method"], "Input should be a method")
         shots = body["shots"]
         if isinstance(shots, bool) or not isinstance(shots, int) or shots < 0:
             return None, _validation_error(["body", "shots"], "Input should be >= 0")
-        if not isinstance(body["observables"], list) or not body["observables"]:
+        if not isinstance(body["observables"], list):
+            return None, _validation_error(["body", "observables"], "At least 1 item")
+        if body["method"] == PHOTONIC_METHOD:
+            if body["observables"]:
+                return None, _validation_error(
+                    ["body", "observables"], "Value error, photonic_sample takes no observables"
+                )
+        elif not body["observables"]:
             return None, _validation_error(["body", "observables"], "At least 1 item")
         if IBM_OPTIONS_FIELD in body:
             rejected = _ibm_options_rejection(body)
@@ -611,6 +689,10 @@ class FakeRouter:
                 f"{device} is {unavailable['status']} at the vendor; try again later",
                 unavailable,
             )
+        if (body["method"] == PHOTONIC_METHOD) != _is_quandela(device):
+            return None, self._wrong_family(body)
+        if body["method"] == PHOTONIC_METHOD:
+            return self._admit_photonic(body)
         if body["shots"] > MAX_SHOTS:
             return None, _error(
                 422,
@@ -645,8 +727,92 @@ class FakeRouter:
             )
         return (spec, observables, weights, inputs), None
 
+    def _supported_on(self, device: str) -> list[str]:
+        if _is_quandela(device):
+            return [PHOTONIC_METHOD]
+        if _is_ibm(device):
+            return sorted(self.supported_methods & IBM_METHODS)
+        return sorted(self.supported_methods)
+
+    def _wrong_family(self, body: dict) -> httpx.Response:
+        """A photonic method off a Quandela device, or any other method on one."""
+        return _error(
+            422,
+            "method_not_supported",
+            f"{body['device']} cannot run method {body['method']!r} today",
+            {"method": body["method"], "supported": self._supported_on(body["device"])},
+        )
+
+    def _admit_photonic(self, body: dict) -> tuple[Any, httpx.Response | None]:
+        """The router's order: the shape (2-D weights, then the row limit), the
+        circuit and its parameters, then the shots."""
+        max_shots, max_rows = QUANDELA_DEVICES[body["device"]]
+        weights_in, inputs_in = body["weights"], body["inputs"]
+        if _is_batch(weights_in):
+            return None, _error(
+                422,
+                "batch_not_supported",
+                f"{body['device']} takes one weight vector per job; send 1-D weights",
+            )
+        rows = len(inputs_in) if _is_batch(inputs_in) else 1
+        if rows > max_rows:
+            return None, _error(
+                422,
+                "batch_not_supported",
+                f"{body['device']} runs at most {max_rows} input rows per job",
+                {"max_rows": max_rows},
+            )
+        try:
+            spec = photonic_spec_from_json(body["circuit_spec"])
+        except Exception as exc:  # any decode failure is circuit_invalid
+            return None, _error(
+                422,
+                "circuit_invalid",
+                "circuit_spec cannot be decoded",
+                {"reason": type(exc).__name__},
+            )
+        try:
+            weights = np.asarray(weights_in, dtype=np.float64)
+            inputs = np.asarray(inputs_in, dtype=np.float64)
+        except ValueError:  # ragged rows
+            return None, _error(
+                422,
+                "circuit_invalid",
+                "weights and inputs must be rectangular arrays",
+                {"reason": "parameter_count"},
+            )
+        if inputs.shape == (spec.n_inputs,):
+            inputs = inputs.reshape(1, spec.n_inputs)
+        if weights.shape != (spec.n_weights,) or not (
+            inputs.ndim == 2 and inputs.shape[0] >= 1 and inputs.shape[1] == spec.n_inputs
+        ):
+            return None, _error(
+                422,
+                "circuit_invalid",
+                "weights or inputs do not match the circuit",
+                {"reason": "parameter_count"},
+            )
+        if not 1 <= body["shots"] <= max_shots:
+            return None, _error(
+                422,
+                "shots_invalid",
+                f"shots must be within 1..{max_shots} on {body['device']}",
+                {"min_shots": 1, "max_shots": max_shots},
+            )
+        return (spec, None, weights, inputs), None
+
+    def _quandela_refusal(self, device: str) -> httpx.Response | None:
+        """The 403 of an account outside the limited preview (contract section 1)."""
+        if not _is_quandela(device) or self.quandela_access:
+            return None
+        return _error(
+            403, "device_access_restricted", DEVICE_ACCESS_MESSAGE, {"device": device}
+        )
+
     def _method_rejection(self, body: dict) -> tuple[str, dict] | None:
         method = body["method"]
+        if method == PHOTONIC_METHOD:
+            return None  # the family and the shots were checked in _admit
         ibm = _is_ibm(body["device"])
         supported = self.supported_methods & IBM_METHODS if ibm else self.supported_methods
         if method not in supported:
@@ -680,11 +846,14 @@ class FakeRouter:
             return rejected
         reason = self._method_rejection(body)
         would_reject = reason[0] if reason else None
-        ibm = _is_ibm(body["device"])
+        quandela = _is_quandela(body["device"])
+        ibm = _is_ibm(body["device"]) or quandela
         if self._device_unavailable(body["device"]) is not None:
             would_reject = "device_unavailable"
-        if would_reject is None and ibm and self.ibm_refusal is not None:
+        if would_reject is None and _is_ibm(body["device"]) and self.ibm_refusal is not None:
             would_reject = self.ibm_refusal
+        if would_reject is None and not self.quandela_access and quandela:
+            would_reject = "device_access_restricted"
         if (
             would_reject is None
             and self.concurrency_limit is not None
@@ -745,7 +914,7 @@ class FakeRouter:
         if reason is not None:
             code, details = reason
             return _error(422, code, f"{code} for this device", details)
-        refusal = self._ibm_refusal(body["device"])
+        refusal = self._ibm_refusal(body["device"]) or self._quandela_refusal(body["device"])
         if refusal is not None:
             return refusal
         if self.concurrency_limit is not None:
@@ -775,6 +944,8 @@ class FakeRouter:
             "execution": (
                 {**_ibm_execution(admitted[0].n_qubits), **self.execution_extra}
                 if _is_ibm(body["device"])
+                else _quandela_execution()
+                if _is_quandela(body["device"])
                 else {"vendor_job_id": str(uuid.uuid4())}
             ),
         }
@@ -875,9 +1046,11 @@ class FakeRouter:
         request = job["request"]
         status = job["status"]
         ibm = _is_ibm(request["device"])
+        quandela = _is_quandela(request["device"])
+        free = ibm or quandela
         billing, cost, vendor, error = "held", None, None, None
-        if ibm:
-            billing = None  # a free IBM job: no hold and no costs, for its whole life
+        if free:
+            billing = None  # a free IBM or Quandela job: no hold and no costs, for its whole life
         elif status == "completed":
             billing = self.complete_billing
             if billing == "settled":
@@ -899,7 +1072,7 @@ class FakeRouter:
             "device": request["device"],
             "method": request["method"],
             "shots": request["shots"],
-            "estimate_usd_micro": 0 if ibm else self.estimate_usd_micro,
+            "estimate_usd_micro": 0 if free else self.estimate_usd_micro,
             "price_version": f"{request['device']}@1",
             "error": error,
             "actual_cost_usd_micro": cost,
@@ -910,14 +1083,25 @@ class FakeRouter:
             "completed_at": job["completed_at"],
         }
         if self.ibm_job_fields:
-            out["credential_source"] = self.credential_source if ibm else None
+            out["credential_source"] = (
+                self.credential_source if ibm else "organization" if quandela else None
+            )
             out["ibm_usage_seconds"] = (
                 self.ibm_usage_seconds if ibm and status == "completed" else None
             )
         return out
 
-    @staticmethod
-    def _compute(method, shots, spec, observables, weights, inputs) -> dict[str, Any]:
+    def _compute(self, method, shots, spec, observables, weights, inputs) -> dict[str, Any]:
+        if method == PHOTONIC_METHOD:
+            return {
+                "kind": "fock_counts",
+                "n_modes": spec.n_modes,
+                "data": [
+                    {} if index in self.empty_rows
+                    else fock_counts_oracle(spec.input_state, row, shots)
+                    for index, row in enumerate(inputs.tolist())
+                ],
+            }
         compiled = NumpySimulator().compile(spec, observables)
         if method == "run":
             values = np.asarray(compiled.run(weights, inputs), dtype=np.float64)
