@@ -213,6 +213,40 @@
       "title": "ExecutionOut",
       "type": "object"
     },
+    "FockCountsResult": {
+      "description": "Photon counts keyed by Fock state, one object per input row in request order. A key\nis the photon count of every mode, mode 0 first, joined by commas. A row may be empty:\nno shot passed the photon filter.",
+      "properties": {
+        "data": {
+          "items": {
+            "additionalProperties": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "type": "object"
+          },
+          "minItems": 1,
+          "title": "Data",
+          "type": "array"
+        },
+        "kind": {
+          "const": "fock_counts",
+          "title": "Kind",
+          "type": "string"
+        },
+        "n_modes": {
+          "minimum": 1,
+          "title": "N Modes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "n_modes",
+        "data"
+      ],
+      "title": "FockCountsResult",
+      "type": "object"
+    },
     "IbmDynamicalDecouplingOut": {
       "description": "Dynamical decoupling options IBM stored with the job.",
       "properties": {
@@ -336,12 +370,13 @@
       "type": "object"
     },
     "Method": {
-      "description": "What the job computes. `run`: one expectation value per observable. `sample`:\nmeasurement counts. `probabilities`: the probability of every basis state.\n`zero_state_probability`: the probability of the all-zeros state.",
+      "description": "What the job computes. `run`: one expectation value per observable. `sample`:\nmeasurement counts. `probabilities`: the probability of every basis state.\n`zero_state_probability`: the probability of the all-zeros state.\n`photonic_sample`: the photon counts of a linear-optical circuit, sampled on a\nphotonic device.",
       "enum": [
         "run",
         "sample",
         "probabilities",
-        "zero_state_probability"
+        "zero_state_probability",
+        "photonic_sample"
       ],
       "title": "Method",
       "type": "string"
@@ -360,7 +395,7 @@
       ]
     }
   },
-  "description": "The result of a completed job. `bit_order` is always `qubit0_msb`: in every\nbitstring and basis-state index, qubit 0 is the leftmost, most significant bit, as in\neigenkit. `result` depends on the method: `run` gives an array of shape\n`[n_observables]`, one expectation value per observable in request order;\n`zero_state_probability` an array of shape `[]`; `probabilities` an array of shape\n`[2**n_qubits]`; `sample` counts. `execution` is what the router ran at the vendor,\nand is null for results stored before the router recorded it.",
+  "description": "The result of a completed job. `bit_order` is always `qubit0_msb`: in every\nbitstring and basis-state index, qubit 0 is the leftmost, most significant bit, as in\neigenkit. `result` depends on the method: `run` gives an array of shape\n`[n_observables]`, one expectation value per observable in request order;\n`zero_state_probability` an array of shape `[]`; `probabilities` an array of shape\n`[2**n_qubits]`; `sample` counts; `photonic_sample` gives Fock-state counts, to which\n`bit_order` does not apply. `execution` is what the router ran at the vendor,\nand is null for results stored before the router recorded it.",
   "properties": {
     "bit_order": {
       "const": "qubit0_msb",
@@ -390,7 +425,8 @@
       "discriminator": {
         "mapping": {
           "array": "#/$defs/ArrayResult",
-          "counts": "#/$defs/CountsResult"
+          "counts": "#/$defs/CountsResult",
+          "fock_counts": "#/$defs/FockCountsResult"
         },
         "propertyName": "kind"
       },
@@ -400,6 +436,9 @@
         },
         {
           "$ref": "#/$defs/CountsResult"
+        },
+        {
+          "$ref": "#/$defs/FockCountsResult"
         }
       ],
       "title": "Result"

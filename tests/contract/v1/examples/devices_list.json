@@ -121,6 +121,181 @@
         "fee_usd_micro": 750,
         "total_usd_micro": 4500
       }
+    },
+    {
+      "id": "quandela/qpu_ascella",
+      "vendor": "quandela",
+      "name": "Quandela Ascella",
+      "kind": "qpu",
+      "qubits": 12,
+      "status": "online",
+      "status_updated_at": "2026-11-24T12:00:00Z",
+      "available_now": null,
+      "availability_windows": [],
+      "methods": [
+        {
+          "method": "photonic_sample",
+          "min_shots": 1,
+          "max_shots": 100000
+        }
+      ],
+      "price": {
+        "price_version": "quandela/qpu_ascella@1",
+        "pricing_model": "task_plus_shot",
+        "markup_bps": 0,
+        "task_fee_usd_micro": 0,
+        "per_shot_usd_micro": 0,
+        "per_minute_usd_micro": null,
+        "min_billable_ms": null,
+        "hold_seconds": null
+      },
+      "example_price": {
+        "shots": 1000,
+        "billed_duration_ms": null,
+        "vendor_cost_usd_micro": 0,
+        "fee_usd_micro": 0,
+        "total_usd_micro": 0
+      }
+    },
+    {
+      "id": "quandela/qpu_belenos",
+      "vendor": "quandela",
+      "name": "Quandela Belenos",
+      "kind": "qpu",
+      "qubits": 24,
+      "status": "online",
+      "status_updated_at": "2026-11-24T12:00:00Z",
+      "available_now": null,
+      "availability_windows": [],
+      "methods": [
+        {
+          "method": "photonic_sample",
+          "min_shots": 1,
+          "max_shots": 100000
+        }
+      ],
+      "price": {
+        "price_version": "quandela/qpu_belenos@1",
+        "pricing_model": "task_plus_shot",
+        "markup_bps": 0,
+        "task_fee_usd_micro": 0,
+        "per_shot_usd_micro": 0,
+        "per_minute_usd_micro": null,
+        "min_billable_ms": null,
+        "hold_seconds": null
+      },
+      "example_price": {
+        "shots": 1000,
+        "billed_duration_ms": null,
+        "vendor_cost_usd_micro": 0,
+        "fee_usd_micro": 0,
+        "total_usd_micro": 0
+      }
+    },
+    {
+      "id": "quandela/sim_ascella",
+      "vendor": "quandela",
+      "name": "Quandela Ascella simulator",
+      "kind": "simulator",
+      "qubits": 12,
+      "status": "online",
+      "status_updated_at": "2026-11-24T12:00:00Z",
+      "available_now": null,
+      "availability_windows": [],
+      "methods": [
+        {
+          "method": "photonic_sample",
+          "min_shots": 1,
+          "max_shots": 1000000
+        }
+      ],
+      "price": {
+        "price_version": "quandela/sim_ascella@1",
+        "pricing_model": "task_plus_shot",
+        "markup_bps": 0,
+        "task_fee_usd_micro": 0,
+        "per_shot_usd_micro": 0,
+        "per_minute_usd_micro": null,
+        "min_billable_ms": null,
+        "hold_seconds": null
+      },
+      "example_price": {
+        "shots": 1000,
+        "billed_duration_ms": null,
+        "vendor_cost_usd_micro": 0,
+        "fee_usd_micro": 0,
+        "total_usd_micro": 0
+      }
+    },
+    {
+      "id": "quandela/sim_belenos",
+      "vendor": "quandela",
+      "name": "Quandela Belenos simulator",
+      "kind": "simulator",
+      "qubits": 24,
+      "status": "online",
+      "status_updated_at": "2026-11-24T12:00:00Z",
+      "available_now": null,
+      "availability_windows": [],
+      "methods": [
+        {
+          "method": "photonic_sample",
+          "min_shots": 1,
+          "max_shots": 1000000
+        }
+      ],
+      "price": {
+        "price_version": "quandela/sim_belenos@1",
+        "pricing_model": "task_plus_shot",
+        "markup_bps": 0,
+        "task_fee_usd_micro": 0,
+        "per_shot_usd_micro": 0,
+        "per_minute_usd_micro": null,
+        "min_billable_ms": null,
+        "hold_seconds": null
+      },
+      "example_price": {
+        "shots": 1000,
+        "billed_duration_ms": null,
+        "vendor_cost_usd_micro": 0,
+        "fee_usd_micro": 0,
+        "total_usd_micro": 0
+      }
+    },
+    {
+      "id": "quandela/sim_slos",
+      "vendor": "quandela",
+      "name": "Quandela SLOS simulator",
+      "kind": "simulator",
+      "qubits": 24,
+      "status": "online",
+      "status_updated_at": "2026-11-24T12:00:00Z",
+      "available_now": null,
+      "availability_windows": [],
+      "methods": [
+        {
+          "method": "photonic_sample",
+          "min_shots": 1,
+          "max_shots": 1000000
+        }
+      ],
+      "price": {
+        "price_version": "quandela/sim_slos@1",
+        "pricing_model": "task_plus_shot",
+        "markup_bps": 0,
+        "task_fee_usd_micro": 0,
+        "per_shot_usd_micro": 0,
+        "per_minute_usd_micro": null,
+        "min_billable_ms": null,
+        "hold_seconds": null
+      },
+      "example_price": {
+        "shots": 1000,
+        "billed_duration_ms": null,
+        "vendor_cost_usd_micro": 0,
+        "fee_usd_micro": 0,
+        "total_usd_micro": 0
+      }
     }
   ]
 }

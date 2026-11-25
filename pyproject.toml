@@ -42,15 +42,16 @@ dev = [
     "pytest==9.1.1",
     "python-semantic-release>=10.7.0",
     "ruff",
-    # scikit-learn, for the estimator-level secret test (a saved QSVC).
+    # scikit-learn and skops (the qml extra), for the estimator-level secret test
+    # (a saved QSVC).
     # The eigenkit version the router worker runs.
-    "eigenkit[datasets]==1.2.0",
+    "eigenkit[datasets,qml]==1.4.0rc1",
 ]
 # scripts/live_parity.py only: the own-credentials Braket and IBM legs. Not part
 # of dev, so CI never installs the AWS SDK or qiskit. Run it with
 # `uv run --group live`.
 live = [
-    "eigenkit[braket,qiskit]==1.2.0",
+    "eigenkit[braket,qiskit]==1.4.0rc1",
 ]
 
 [build-system]

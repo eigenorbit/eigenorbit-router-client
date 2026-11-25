@@ -26,7 +26,7 @@
       "type": "object"
     },
     "DeviceOut": {
-      "description": "A device you can run jobs on. `qubits` is the most qubits a circuit may use on it.\n`status` is the vendor's status from the router's last check, at `status_updated_at`\n(null until the first check). A job is accepted only on an `online` device with a\nrecent check. `available_now` says whether now is inside one of\n`availability_windows`, and is null when no windows are known. It does not gate a job:\noutside its windows a device still accepts jobs, and they wait in the vendor's queue.\n`methods` lists what the device runs, with the shots each method accepts.",
+      "description": "A device you can run jobs on. `qubits` is the most qubits a circuit may use on it.\nFor a photonic device it is the number of optical modes. `status` is the vendor's\nstatus from the router's last check, at `status_updated_at` (null until the first\ncheck). A job is accepted only on an `online` device with a recent check.\n`available_now` says whether now is inside one of `availability_windows`, and is null\nwhen no windows are known. It does not gate a job: outside its windows a device still\naccepts jobs, and they wait in the vendor's queue. `methods` lists what the device\nruns, with the shots each method accepts.",
       "properties": {
         "availability_windows": {
           "items": {
@@ -302,12 +302,13 @@
       "type": "object"
     },
     "Method": {
-      "description": "What the job computes. `run`: one expectation value per observable. `sample`:\nmeasurement counts. `probabilities`: the probability of every basis state.\n`zero_state_probability`: the probability of the all-zeros state.",
+      "description": "What the job computes. `run`: one expectation value per observable. `sample`:\nmeasurement counts. `probabilities`: the probability of every basis state.\n`zero_state_probability`: the probability of the all-zeros state.\n`photonic_sample`: the photon counts of a linear-optical circuit, sampled on a\nphotonic device.",
       "enum": [
         "run",
         "sample",
         "probabilities",
-        "zero_state_probability"
+        "zero_state_probability",
+        "photonic_sample"
       ],
       "title": "Method",
       "type": "string"

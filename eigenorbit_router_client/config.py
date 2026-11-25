@@ -35,6 +35,9 @@ _LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 class RouterConfig(SecretFieldsMixin):
     """Router device and connection settings; pass as `provider=`.
 
+    For a `quandela/` device the config goes to `RouterPhotonicBackend` instead,
+    and `shots` must be 1 or more.
+
     Attributes:
         device: Router device ID `<vendor>/<device>`, e.g. `"braket/sv1"`.
         shots: 0 asks a simulator for exact results; a positive int samples.
@@ -108,6 +111,11 @@ class RouterConfig(SecretFieldsMixin):
     def is_qpu(self) -> bool:
         """False for the Braket simulators SV1 and DM1, True otherwise."""
         return self.device not in _SIMULATORS
+
+    @property
+    def is_photonic(self) -> bool:
+        """True for the Quandela photonic devices (limited preview)."""
+        return self.vendor == "quandela"
 
 
 def _is_int(value: object) -> bool:

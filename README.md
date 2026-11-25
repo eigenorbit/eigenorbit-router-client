@@ -8,7 +8,9 @@ EigenOrbit API key instead of separate vendor credentials.
 
 You write the same eigenkit code as with your own vendor credentials and pass
 `provider=RouterConfig(...)`. The router runs the circuit on an Amazon Braket
-simulator or QPU, or on an IBM Quantum device. Results have the same shape,
+simulator or QPU, or on an IBM Quantum device. Photonic circuits run on Quandela
+Cloud devices through `RouterPhotonicBackend` (see
+[Photonic circuits on Quandela Cloud](#photonic-circuits-on-quandela-cloud)). Results have the same shape,
 dtype and bit ordering as the same code on the vendor directly. Braket jobs
 are billed to your prepaid EigenOrbit balance. IBM jobs run on your own IBM
 Quantum account and carry no router charge.
@@ -82,7 +84,7 @@ runs as one router job per row.
 ## Devices
 
 A device ID is `<vendor>/<device>`, for example `braket/sv1`, `braket/dm1`,
-`braket/iqm_garnet` or `ibm/ibm_fez`. The catalog at
+`braket/iqm_garnet`, `ibm/ibm_fez` or `quandela/sim_slos`. The catalog at
 https://router.eigenorbit.com/devices (no sign-in needed) lists every device
 with its status, availability windows, shot ranges and price.
 
@@ -196,6 +198,36 @@ OpenQASM 3 program (`transpiled_qasm3`); on Rigetti devices the compiled Quil
 program (`compiled_quil`). On all three, the physical qubits the program
 touches (`active_qubits`) and the physical qubit each classical bit was
 measured on (`final_layout`).
+
+## Photonic circuits on Quandela Cloud
+
+`RouterPhotonicBackend` runs photonic circuits from `eigenkit.photonics` on
+Quandela devices. It is an executor you pass to eigenkit's photonic functions,
+not a `provider=`, and it needs
+eigenkit 1.4.0 or later (currently the 1.4.0rc1 release candidate).
+Devices are `quandela/<device>`, for example `quandela/sim_slos`, and are in
+limited preview: an account outside the preview gets a `RouterError` with the
+code `device_access_restricted`. Quandela jobs carry no router charge and need
+no Quandela token.
+
+```python
+import numpy as np
+from eigenkit.photonics.reservoir import random_reservoir_spec, run_photonic_reservoir
+from eigenorbit_router_client import RouterConfig, RouterPhotonicBackend
+
+spec, weights = random_reservoir_spec(4, 2, input_state=(1, 1, 0, 0))
+sequences = np.random.default_rng(0).uniform(-1, 1, (2, 5, 2))
+router = RouterPhotonicBackend(RouterConfig(device="quandela/sim_slos", shots=2000))
+features = run_photonic_reservoir(spec, weights, sequences, executor=router)
+```
+
+`run` returns a Fock distribution, `{photon_counts: probability}`, from one
+job. `run_batch`, which `run_photonic_reservoir` uses, sends all rows as one
+job, or several jobs one after another when the batch is above the device's row
+limit. The whole batch must still fit one router request: a larger one is
+refused with a `RouterError` with the code `request_too_large` (its `details`
+give the limit), so split it yourself. `shots` must be 1 or more. Results are sampled, so there are no
+gradients. A run that is interrupted or times out cancels its job.
 
 ## Saved models
 

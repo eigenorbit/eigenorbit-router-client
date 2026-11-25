@@ -40,10 +40,15 @@ from eigenkit.core.blocks import AngleEncoding, BasicVariational, assemble
 from eigenkit.core.ir import CircuitSpec, Gate, InputRef, WeightRef
 from eigenkit.core.observables import X, Y, Z, all_z
 from eigenkit.core.wire import circuit_spec_from_json, observables_from_json
+from eigenkit.photonics.wire import photonic_spec_from_json
 from jsonschema import Draft202012Validator
 
-from eigenorbit_router_client import RouterConfig, RouterError
-from eigenorbit_router_client._decode import decode_execution, decode_result
+from eigenorbit_router_client import RouterConfig, RouterError, RouterPhotonicBackend
+from eigenorbit_router_client._decode import (
+    decode_execution,
+    decode_fock_counts,
+    decode_result,
+)
 from eigenorbit_router_client.backend import RouterBackend
 from fake_router import VALID_KEY, FakeRouter
 
@@ -93,10 +98,12 @@ EXAMPLE_SCHEMAS = {
     "estimate_request": "JobRequest",
     "estimate_response": "EstimateOut",
     "job_submit_request": "JobRequest",
+    "job_submit_request_photonic": "JobRequest",
     "job_accepted_response": "JobOut",
     "job_status_completed": "JobOut",
     "job_status_failed_circuit": "JobOut",
     "job_result_run": "JobResultOut",
+    "job_result_photonic_sample": "JobResultOut",
     "job_result_zero_state_probability": "JobResultOut",
     "error_concurrency_limit_exceeded": "ErrorEnvelope",
     "error_device_unavailable": "ErrorEnvelope",
@@ -511,6 +518,43 @@ def test_the_ry_example_request_is_rebuilt_exactly():
 
     assert request == example
     assert request == _example("estimate_request")
+
+
+def _photonic_compiled(example: dict):
+    spec = photonic_spec_from_json(example["circuit_spec"])
+    config = _config(example["device"], shots=example["shots"])
+    return RouterPhotonicBackend(config).compile(spec)
+
+
+def test_the_photonic_example_request_is_rebuilt_exactly():
+    example = _example("job_submit_request_photonic")
+    compiled = _photonic_compiled(example)
+    try:
+        request = compiled.build_request(example["weights"], example["inputs"])
+    finally:
+        compiled.close()
+    assert request == example
+
+
+def test_a_photonic_batch_request_validates_against_the_job_request_schema():
+    example = _example("job_submit_request_photonic")
+    compiled = _photonic_compiled(example)
+    row = np.atleast_2d(np.asarray(example["inputs"], dtype=np.float64))[0]
+    try:
+        request = compiled.build_request(example["weights"], np.stack([row, row, row]))
+    finally:
+        compiled.close()
+    _assert_valid("JobRequest", request)
+    assert np.shape(request["inputs"]) == (3, len(row))
+
+
+def test_the_photonic_result_example_decodes_to_its_counts():
+    payload = _example("job_result_photonic_sample")
+    result = payload["result"]
+    rows = decode_fock_counts(payload, n_modes=result["n_modes"],
+                              n_rows=len(result["data"]), job_id=payload["job_id"])
+    assert [{",".join(map(str, state)): count for state, count in row.items()}
+            for row in rows] == result["data"]
 
 
 # ---- (b) result decoding ------------------------------------------------------
@@ -977,3 +1021,27 @@ def test_the_double_estimate_reports_the_new_reasons(double):
     assert capped.json()["would_reject_reason"] == "concurrency_limit_exceeded"
     for response in (retired, capped):
         _assert_valid("EstimateOut", response.json())
+
+
+def test_the_double_photonic_bodies_are_valid(double):
+    router, http = double
+    body = _example("job_submit_request_photonic")
+    estimate = http.post("/v1/jobs/estimate", json=body, headers=_headers())
+    created = _submit(http, body)
+    seen = _poll_to_terminal(http, created.json()["id"])
+    result = http.get(f"/v1/jobs/{created.json()['id']}/result", headers=_headers())
+    row = np.atleast_2d(body["inputs"])[0].tolist()
+    too_many = _submit(
+        http, {**body, "device": "quandela/sim_belenos", "inputs": [row] * 17}
+    )
+    router.quandela_access = False
+    restricted = _submit(http, body)
+
+    _assert_valid("EstimateOut", estimate.json())
+    for job in (created.json(), *seen):
+        _assert_valid("JobOut", job)
+    _assert_valid("JobResultOut", result.json())
+    for refused in (too_many, restricted):
+        _assert_valid("ErrorEnvelope", refused.json())
+    assert too_many.json()["error"]["code"] == "batch_not_supported"
+    assert restricted.json()["error"]["code"] == "device_access_restricted"

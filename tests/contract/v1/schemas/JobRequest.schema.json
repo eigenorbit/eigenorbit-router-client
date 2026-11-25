@@ -126,12 +126,13 @@
       "type": "object"
     },
     "Method": {
-      "description": "What the job computes. `run`: one expectation value per observable. `sample`:\nmeasurement counts. `probabilities`: the probability of every basis state.\n`zero_state_probability`: the probability of the all-zeros state.",
+      "description": "What the job computes. `run`: one expectation value per observable. `sample`:\nmeasurement counts. `probabilities`: the probability of every basis state.\n`zero_state_probability`: the probability of the all-zeros state.\n`photonic_sample`: the photon counts of a linear-optical circuit, sampled on a\nphotonic device.",
       "enum": [
         "run",
         "sample",
         "probabilities",
-        "zero_state_probability"
+        "zero_state_probability",
+        "photonic_sample"
       ],
       "title": "Method",
       "type": "string"
@@ -183,24 +184,23 @@
           "type": "array"
         }
       ],
-      "description": "The circuit's input values, one number per input, or `[]` when the circuit has none. Send a flat array, as for `weights`.",
+      "description": "The circuit's input values, one number per input, or `[]` when the circuit has none. Send a flat array, as for `weights`. With `photonic_sample` it may be a 2-D array, one row per run: the job runs every row and returns one result per row. More rows than the device takes answer 422 `batch_not_supported` with the limit in `details.max_rows`.",
       "title": "Inputs"
     },
     "method": {
       "$ref": "#/$defs/Method"
     },
     "observables": {
-      "description": "The observables, as eigenkit produces them: its `router` provider builds this value. The format is not specified here. At least one, for every method.",
+      "description": "The observables, as eigenkit produces them: its `router` provider builds this value. The format is not specified here. At least one for every method except `photonic_sample`, which takes `[]`.",
       "items": {
         "additionalProperties": true,
         "type": "object"
       },
-      "minItems": 1,
       "title": "Observables",
       "type": "array"
     },
     "shots": {
-      "description": "Shots for the vendor task. 0 asks a simulator for exact results with `run`, `probabilities` and `zero_state_probability`. `GET /v1/devices` lists the shots each method accepts on each device.",
+      "description": "Shots for the vendor task. 0 asks a simulator for exact results with `run`, `probabilities` and `zero_state_probability`. `GET /v1/devices` lists the shots each method accepts on each device. For `photonic_sample` it is the samples asked for and the shot limit of each run, and a lossy device returns fewer samples than shots.",
       "minimum": 0,
       "title": "Shots",
       "type": "integer"

@@ -192,6 +192,16 @@ def _map_rows(pool, fn, indexes, jobs: list[dict[str, Any] | None]) -> list[Any]
         ) from None
 
 
+def _refuse_photonic(config: RouterConfig) -> None:
+    if config.is_photonic:
+        raise ValueError(
+            f"{config.device} is a photonic device: it runs eigenkit.photonics "
+            f"circuits, not qubit circuits. Use RouterPhotonicBackend(RouterConfig("
+            f"device={config.device!r}, shots=...)) from eigenorbit_router_client "
+            f"as the executor."
+        )
+
+
 class RouterBackend:
     """Kit provider for EigenOrbit Router, registered as `"router"`.
 
@@ -202,6 +212,7 @@ class RouterBackend:
     def __init__(self, config: RouterConfig | None = None, name: str = "router"):
         if config is None:
             raise ValueError(_NO_DEVICE_MESSAGE)
+        _refuse_photonic(config)
         self.name = name
         self.config = config
 
@@ -253,6 +264,7 @@ class RouterCompiled(CompiledCircuit):
         observables: Sequence[Observable],
         config: RouterConfig,
     ):
+        _refuse_photonic(config)
         self._config = config
         self._circuit_json = circuit_spec_to_json(circuit)
         self._observables_json = observables_to_json(list(observables))

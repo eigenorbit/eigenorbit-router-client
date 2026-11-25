@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 import numpy as np
 
 from .errors import RouterError
+
+
+_PHOTON_COUNT = re.compile(r"0|[1-9][0-9]*")
 
 
 def _array_shape(method: str, n_qubits: int, n_observables: int) -> tuple[int, ...]:
@@ -100,3 +104,60 @@ def _decode_counts(result: dict, n_qubits: int, invalid) -> dict[str, int]:
             raise invalid("has a count that is not a non-negative integer")
         counts[key] = value
     return counts
+
+
+def decode_fock_counts(
+    payload: Any,
+    *,
+    n_modes: int,
+    n_rows: int,
+    job_id: str | None = None,
+) -> list[dict[tuple[int, ...], int]]:
+    """Turn a `photonic_sample` JobResultOut into one count dict per input row.
+
+    Each dict maps a Fock state, the photon count of every mode as a tuple of
+    ints, to its shot count. A row in which no shot passed the photon filter is
+    an empty dict. `bit_order` is not read: it applies to bitstring results.
+
+    Raises:
+        RouterError: `invalid_response` when the payload breaks the contract.
+    """
+
+    def invalid(reason: str) -> RouterError:
+        return RouterError(
+            "invalid_response", f"the router result {reason}", job_id=job_id
+        )
+
+    if not isinstance(payload, dict):
+        raise invalid("is not a JSON object")
+    if payload.get("method") != "photonic_sample":
+        raise invalid("is for a method other than 'photonic_sample'")
+    result = payload.get("result")
+    if not isinstance(result, dict):
+        raise invalid("has no result object")
+    if result.get("kind") != "fock_counts":
+        raise invalid("is not fock_counts")
+    result_modes = result.get("n_modes")
+    if type(result_modes) is not int or result_modes != n_modes:
+        raise invalid(f"has an n_modes that is not the requested {n_modes}")
+    data = result.get("data")
+    if not isinstance(data, list) or len(data) != n_rows:
+        raise invalid(f"does not hold a list of {n_rows} rows")
+    rows: list[dict[tuple[int, ...], int]] = []
+    for row in data:
+        if not isinstance(row, dict):
+            raise invalid("has a row that is not an object")
+        counts: dict[tuple[int, ...], int] = {}
+        for key, value in row.items():
+            parts = key.split(",") if isinstance(key, str) else []
+            if len(parts) != n_modes or not all(
+                _PHOTON_COUNT.fullmatch(p) for p in parts
+            ):
+                raise invalid(
+                    f"has a key that is not {n_modes} comma-joined photon counts"
+                )
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise invalid("has a count that is not a non-negative integer")
+            counts[tuple(int(p) for p in parts)] = value
+        rows.append(counts)
+    return rows
