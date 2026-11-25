@@ -36,6 +36,11 @@ def _check_config(config: RouterConfig) -> None:
         )
 
 
+def _check_finite(array: np.ndarray, name: str) -> None:
+    if not np.isfinite(array).all():
+        raise ValueError(f"{name} must be finite: no NaN and no infinity")
+
+
 class RouterPhotonicBackend:
     """Photonic executor for the router's Quandela devices (limited preview).
 
@@ -94,6 +99,7 @@ class RouterPhotonicCompiled:
             raise ValueError(
                 f"weights must have shape ({self._spec.n_weights},), got {array.shape}"
             )
+        _check_finite(array, "weights")
         return array
 
     def _run_job(
@@ -140,26 +146,30 @@ class RouterPhotonicCompiled:
 
         The same request goes out once more with the same Idempotency-Key: the router
         answers with the job it already created, or creates it now, and the job is
-        cancelled either way. A failure here is logged by type, not raised.
+        cancelled either way. A failure is logged, not raised: by type alone when the
+        replay gave no job, with the job id when only the cancel failed.
         """
         try:
             job = self._http.submit(body, idempotency_key=idempotency_key)
             job_id = job.get("id")
             if not isinstance(job_id, str) or not job_id:
                 raise RouterError("invalid_response", "the router returned a job without an id")
-            self._http.cancel(job_id)
         except Exception as exc:
             _logger.warning(
                 "could not cancel the router job of an interrupted submit (%s); it "
                 "may still be running and hold the device",
                 type(exc).__name__,
             )
+            return
+        self._cancel(job_id)
 
     def _cancel(self, job_id: str) -> None:
         """Ask the router to cancel `job_id`; a failed request is logged, not raised."""
         try:
             self._http.cancel(job_id)
         except Exception as exc:
+            if isinstance(exc, RouterError) and exc.code == "job_not_cancellable":
+                return  # the job already ended: nothing is left to cancel
             _logger.warning(
                 "could not cancel router job %s (%s); it may still be running and "
                 "hold the device",
@@ -181,6 +191,7 @@ class RouterPhotonicCompiled:
             raise ValueError(
                 f"inputs must have shape ({self._spec.n_inputs},), got {inputs.shape}"
             )
+        _check_finite(inputs, "inputs")
         counts = self._run_job(weights, inputs, idempotency_key=str(uuid.uuid4()))[0]
         return _normalized(counts)
 
@@ -207,6 +218,7 @@ class RouterPhotonicCompiled:
                 f"rows must have shape (n, {self._spec.n_inputs}), got {rows.shape}; "
                 f"run() takes one sample"
             )
+        _check_finite(rows, "rows")
         n = len(rows)
         if n == 0:
             return []

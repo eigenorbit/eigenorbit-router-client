@@ -318,13 +318,15 @@ class InterruptOnSubmit(httpx.BaseTransport):
     interrupt is raised; otherwise it is raised before the router sees the request.
     """
 
-    def __init__(self, router, *, nth=1, after_create=True, then=None):
+    def __init__(self, router, *, nth=1, after_create=True, then=None, again=False):
         self.router = router
         self.nth = nth
         self.after_create = after_create
         self.then = then
+        self.again = again
         self.seen = 0
         self.interrupt = KeyboardInterrupt()
+        self.second_interrupt = KeyboardInterrupt()
 
     def handle_request(self, request):
         if request.method == "POST" and request.url.path == "/v1/jobs":
@@ -336,6 +338,8 @@ class InterruptOnSubmit(httpx.BaseTransport):
                 if self.then is not None:
                     self.then()
                 raise self.interrupt
+            if self.again and self.seen == self.nth + 1:
+                raise self.second_interrupt
         return self.router.transport.handle_request(request)
 
 
@@ -411,6 +415,78 @@ def test_a_replay_that_fails_is_logged_by_type_only_and_the_interrupt_still_arri
     assert "photonic_sample" not in text
 
 
+def test_a_second_interrupt_during_the_replay_reaches_the_caller(
+    fake_router, monkeypatch
+):
+    transport = interrupt_on_submit(fake_router, monkeypatch, after_create=True, again=True)
+    with pytest.raises(KeyboardInterrupt) as caught:
+        compiled().run(WEIGHTS, ONE)
+    assert caught.value is transport.second_interrupt
+    assert caught.value.__context__ is transport.interrupt
+    assert _cancels(fake_router) == []
+
+
+def test_a_failed_cancel_after_a_replay_is_logged_with_the_job_id(
+    fake_router, monkeypatch, caplog
+):
+    def cancel_fails():
+        fake_router.fail_next(
+            "POST", "/v1/jobs/", status=500,
+            body={"error": {"code": "internal_error", "message": "SECRET-DETAIL"}},
+        )
+
+    transport = interrupt_on_submit(
+        fake_router, monkeypatch, after_create=True, then=cancel_fails
+    )
+    with caplog.at_level(logging.WARNING, logger="eigenorbit_router_client.photonic"):
+        with pytest.raises(KeyboardInterrupt) as caught:
+            compiled().run(WEIGHTS, ONE)
+    assert caught.value is transport.interrupt
+    (job_id,) = fake_router.jobs
+    records = [r for r in caplog.records if r.name == "eigenorbit_router_client.photonic"]
+    assert len(records) == 1 and records[0].levelno == logging.WARNING
+    text = records[0].getMessage()
+    key = posts(fake_router)[0].headers["Idempotency-Key"]
+    assert job_id in text and "RouterError" in text
+    assert "SECRET-DETAIL" not in text and VALID_KEY not in text and key not in text
+
+
+def test_a_cancel_of_a_job_that_already_ended_is_not_logged(fake_router, caplog):
+    def broken_result(self, job_id):
+        raise ValueError("cannot decode")
+
+    with caplog.at_level(logging.WARNING, logger="eigenorbit_router_client.photonic"):
+        with pytest.MonkeyPatch.context() as patch:
+            patch.setattr(_client.RouterHttpClient, "get_result", broken_result)
+            with pytest.raises(ValueError):
+                compiled().run(WEIGHTS, ONE)
+    (job_id,) = fake_router.jobs
+    assert [r.url.path for r in _cancels(fake_router)] == [f"/v1/jobs/{job_id}/cancel"]
+    assert fake_router.jobs[job_id]["status"] == "completed"
+    assert [r for r in caplog.records if r.levelno >= logging.WARNING] == []
+
+
+@pytest.mark.parametrize("bad", [np.nan, np.inf, -np.inf])
+@pytest.mark.parametrize(
+    "call, name",
+    [
+        (lambda c, bad: c.run(np.array([bad]), ONE), "weights"),
+        (lambda c, bad: c.run(WEIGHTS, np.array([bad])), "inputs"),
+        (lambda c, bad: c.run_batch(np.array([bad]), ROWS), "weights"),
+        (lambda c, bad: c.run_batch(WEIGHTS, np.array([[0.1], [bad]])), "rows"),
+        (lambda c, bad: c.expectation(np.array([bad]), ONE, PhotonNumber(0)), "weights"),
+    ],
+)
+def test_a_non_finite_number_is_refused_before_anything_is_sent(
+    fake_router, caplog, call, name, bad
+):
+    with caplog.at_level(logging.DEBUG):
+        with pytest.raises(ValueError) as caught:
+            call(compiled(), bad)
+    assert name in str(caught.value) and "finite" in str(caught.value)
+    assert fake_router.requests == [] and caplog.records == []
+
+
 @pytest.mark.parametrize("refusal", ["no_access", "batch_not_supported"])
 def test_a_definite_refusal_of_the_submit_is_not_replayed_or_cancelled(
     fake_router, refusal
@@ -441,8 +517,8 @@ def test_an_interrupt_in_the_second_chunks_submit_cancels_only_that_job(
     keys = [r.headers["Idempotency-Key"] for r in posts(fake_router)]
     assert keys[2] == keys[3] and keys[2].endswith(":1")
     assert len(fake_router.jobs) == 2
-    first_id = fake_router._idempotency[keys[1]][1]
-    second_id = fake_router._idempotency[keys[2]][1]
+    by_row = {job["row"]: job_id for job_id, job in fake_router.jobs.items()}
+    first_id, second_id = by_row[0], by_row[1]
     assert [r.url.path for r in _cancels(fake_router)] == [f"/v1/jobs/{second_id}/cancel"]
     assert fake_router.jobs[first_id]["status"] != "cancelled"
     assert fake_router.jobs[second_id]["status"] == "cancelled"
