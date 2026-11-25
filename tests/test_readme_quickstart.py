@@ -104,3 +104,13 @@ def test_the_readme_says_nothing_about_shared_ibm_access(word):
 )
 def test_the_readme_names_the_settings_and_the_support_address(name):
     assert name in _text()
+
+
+def test_the_readme_shows_the_photonic_backend_on_a_quandela_device():
+    text = _text()
+
+    assert "from eigenorbit_router_client import RouterConfig, RouterPhotonicBackend" in text
+    assert 'RouterConfig(device="quandela/sim_slos", shots=2000)' in text
+    assert "limited preview" in text
+    assert "run that is interrupted or times out cancels its job" in text
+    assert "eigenkit 1.4.0 or later (currently the 1.4.0rc1 release candidate)" in text
