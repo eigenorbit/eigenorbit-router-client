@@ -232,6 +232,42 @@ def test_a_poll_timeout_cancels_the_job(fake_router, monkeypatch):
     assert len(_cancels(fake_router)) == 1
 
 
+STALE_ADVICE = ("keeps running", "no auto-cancel", "handle.cancel", "compiled.submit")
+
+
+def test_an_interrupt_says_the_job_is_being_cancelled(fake_router, monkeypatch):
+    fake_router.status_steps = ("queued", "running")
+
+    def interrupt(seconds):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(_client, "_sleep", interrupt)
+    with pytest.raises(KeyboardInterrupt) as caught:
+        compiled().run(WEIGHTS, ONE)
+    text = str(caught.value)
+    assert text.startswith("interrupted while waiting for router job ")
+    assert "is being cancelled" in text
+    assert not [phrase for phrase in STALE_ADVICE if phrase in text]
+
+
+def test_a_poll_timeout_says_the_job_is_being_cancelled(fake_router, monkeypatch):
+    fake_router.status_steps = ("queued", "running")
+    now = [0.0]
+    monkeypatch.setattr(_client, "_sleep", lambda seconds: now.__setitem__(0, now[0] + seconds))
+    monkeypatch.setattr(_client, "_monotonic", lambda: now[0])
+    with pytest.raises(RouterError) as caught:
+        RouterPhotonicBackend(
+            RouterConfig("quandela/sim_slos", shots=537, api_key=VALID_KEY,
+                         base_url="https://router.test", poll_timeout_seconds=5)
+        ).compile(SPEC).run(WEIGHTS, ONE)
+    text = str(caught.value)
+    assert "poll_timeout_seconds=5" in text and "is being cancelled" in text
+    assert "raise RouterConfig(poll_timeout_seconds=...) to wait longer" in text
+    assert not [phrase for phrase in STALE_ADVICE if phrase in text]
+    assert caught.value.code == "poll_timeout"
+    assert caught.value.details == {"status": "running", "poll_timeout_seconds": 5}
+
+
 def test_a_cancel_that_fails_leaves_the_original_exception(fake_router, monkeypatch):
     fake_router.status_steps = ("queued", "running")
     fake_router.fail_next("POST", "/v1/jobs/", status=500, times=10)

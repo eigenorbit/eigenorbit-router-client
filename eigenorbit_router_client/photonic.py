@@ -112,7 +112,11 @@ class RouterPhotonicCompiled:
         if not isinstance(job_id, str) or not job_id:
             raise RouterError("invalid_response", "the router returned a job without an id")
         try:
-            job = self._http.wait(job_id, timeout_seconds=self._config.poll_timeout_seconds)
+            job = self._http.wait(
+                job_id,
+                timeout_seconds=self._config.poll_timeout_seconds,
+                cancels_job=True,
+            )
             if job.get("status") == "completed":
                 return decode_fock_counts(
                     self._http.get_result(job_id),

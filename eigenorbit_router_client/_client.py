@@ -211,14 +211,21 @@ class RouterHttpClient:
         response = self._request("POST", f"/v1/jobs/{job_id}/cancel", job_id=job_id)
         return _json(response, job_id=job_id)
 
-    def wait(self, job_id: str, *, timeout_seconds: float) -> dict[str, Any]:
+    def wait(
+        self, job_id: str, *, timeout_seconds: float, cancels_job: bool = False
+    ) -> dict[str, Any]:
         """Poll the job until its status is terminal and return its JobOut.
+
+        `cancels_job` says whether the caller cancels the job when this raises; the
+        messages then tell the user so instead of saying that the job keeps running.
 
         Raises:
             RouterError: `poll_timeout` when the job is not terminal at the deadline.
             KeyboardInterrupt: On Ctrl-C, with `.job_id` set.
         """
-        # Never cancel on timeout or Ctrl-C: the job keeps running and is billed.
+        # This method never cancels the job. The caller decides: the qubit backend
+        # leaves it running (and billed), the photonic backend cancels it, and the
+        # messages say which.
         deadline = _monotonic() + timeout_seconds
         polls = 0
         try:
@@ -229,23 +236,32 @@ class RouterHttpClient:
                     return job
                 remaining = deadline - _monotonic()
                 if remaining <= 0:
+                    after = (
+                        "The job is being cancelled; raise "
+                        "RouterConfig(poll_timeout_seconds=...) to wait longer."
+                        if cancels_job
+                        else "It keeps running and is billed; there is no auto-cancel. "
+                        "Call result() again on a submit() handle to keep waiting, or "
+                        "handle.cancel() to stop it."
+                    )
                     raise RouterError(
                         "poll_timeout",
                         f"router job {job_id} is still {status} after "
-                        f"poll_timeout_seconds={timeout_seconds:g}. It keeps running "
-                        f"and is billed; there is no auto-cancel. Call result() "
-                        f"again on a submit() handle to keep waiting, or "
-                        f"handle.cancel() to stop it.",
+                        f"poll_timeout_seconds={timeout_seconds:g}. {after}",
                         {"status": status, "poll_timeout_seconds": timeout_seconds},
                         job_id=job_id,
                     )
                 _sleep(min(POLL_DELAYS[min(polls, len(POLL_DELAYS) - 1)], remaining))
                 polls += 1
         except KeyboardInterrupt:
+            after = (
+                "The job is being cancelled."
+                if cancels_job
+                else "The job keeps running and is billed (no auto-cancel). Use "
+                "compiled.submit(...) and handle.cancel() to control long jobs."
+            )
             interrupt = KeyboardInterrupt(
-                f"interrupted while waiting for router job {job_id}. The job keeps "
-                f"running and is billed (no auto-cancel). Use compiled.submit(...) "
-                f"and handle.cancel() to control long jobs."
+                f"interrupted while waiting for router job {job_id}. {after}"
             )
             interrupt.job_id = job_id
             raise interrupt from None
