@@ -74,6 +74,7 @@
         "ibm_connection_busy",
         "request_too_large",
         "rate_limited",
+        "device_access_restricted",
         "ibm_credentials_rejected",
         "ibm_quota_exhausted",
         "ibm_target_mismatch",

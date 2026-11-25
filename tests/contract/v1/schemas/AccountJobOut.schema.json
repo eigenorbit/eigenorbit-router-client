@@ -94,6 +94,7 @@
         "ibm_connection_busy",
         "request_too_large",
         "rate_limited",
+        "device_access_restricted",
         "ibm_credentials_rejected",
         "ibm_quota_exhausted",
         "ibm_target_mismatch",
@@ -138,12 +139,13 @@
       "type": "string"
     },
     "Method": {
-      "description": "What the job computes. `run`: one expectation value per observable. `sample`:\nmeasurement counts. `probabilities`: the probability of every basis state.\n`zero_state_probability`: the probability of the all-zeros state.",
+      "description": "What the job computes. `run`: one expectation value per observable. `sample`:\nmeasurement counts. `probabilities`: the probability of every basis state.\n`zero_state_probability`: the probability of the all-zeros state.\n`photonic_sample`: the photon counts of a linear-optical circuit, sampled on a\nphotonic device.",
       "enum": [
         "run",
         "sample",
         "probabilities",
-        "zero_state_probability"
+        "zero_state_probability",
+        "photonic_sample"
       ],
       "title": "Method",
       "type": "string"
@@ -173,7 +175,7 @@
           "type": "null"
         }
       ],
-      "description": "The job's hold on your balance. Null when no hold was ever placed, as for an IBM Quantum job or a job rejected for the balance."
+      "description": "The job's hold on your balance. Null when no hold was ever placed, as for a job that is free on the router or a job rejected for the balance."
     },
     "completed_at": {
       "anyOf": [
@@ -254,7 +256,7 @@
         }
       ],
       "default": null,
-      "description": "The IBM quantum time the job used, in seconds with millisecond precision, as IBM reports it. Null until IBM reports it, and for an Amazon Braket job.",
+      "description": "The IBM quantum time the job used, in seconds with millisecond precision, as IBM reports it. Null until IBM reports it, and for a job on any other vendor's device.",
       "title": "Ibm Usage Seconds"
     },
     "id": {

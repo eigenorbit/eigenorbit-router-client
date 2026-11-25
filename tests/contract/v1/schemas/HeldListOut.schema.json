@@ -43,12 +43,13 @@
       "type": "object"
     },
     "Method": {
-      "description": "What the job computes. `run`: one expectation value per observable. `sample`:\nmeasurement counts. `probabilities`: the probability of every basis state.\n`zero_state_probability`: the probability of the all-zeros state.",
+      "description": "What the job computes. `run`: one expectation value per observable. `sample`:\nmeasurement counts. `probabilities`: the probability of every basis state.\n`zero_state_probability`: the probability of the all-zeros state.\n`photonic_sample`: the photon counts of a linear-optical circuit, sampled on a\nphotonic device.",
       "enum": [
         "run",
         "sample",
         "probabilities",
-        "zero_state_probability"
+        "zero_state_probability",
+        "photonic_sample"
       ],
       "title": "Method",
       "type": "string"

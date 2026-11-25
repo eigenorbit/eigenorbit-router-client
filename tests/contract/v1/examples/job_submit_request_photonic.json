@@ -1,0 +1,62 @@
+{
+  "device": "quandela/sim_slos",
+  "method": "photonic_sample",
+  "shots": 1000,
+  "circuit_spec": {
+    "n_modes": 4,
+    "n_weights": 1,
+    "n_inputs": 1,
+    "input_state": [
+      1,
+      0,
+      1,
+      0
+    ],
+    "components": [
+      {
+        "c": "PS",
+        "mode": 1,
+        "phi": {
+          "t": "InputRef",
+          "i": 0
+        }
+      },
+      {
+        "c": "BS",
+        "modes": [
+          0,
+          1
+        ],
+        "theta": {
+          "t": "WeightRef",
+          "i": 0
+        },
+        "phi": {
+          "t": "Constant",
+          "v": 0.0
+        }
+      },
+      {
+        "c": "PERM",
+        "perm": [
+          1,
+          0,
+          2,
+          3
+        ]
+      }
+    ]
+  },
+  "observables": [],
+  "weights": [
+    0.3
+  ],
+  "inputs": [
+    [
+      0.276
+    ],
+    [
+      0.0
+    ]
+  ]
+}

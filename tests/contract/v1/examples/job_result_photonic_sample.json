@@ -1,0 +1,18 @@
+{
+  "job_id": "01a0d3c5-6d70-7894-b00c-bf5998ca19fb",
+  "method": "photonic_sample",
+  "bit_order": "qubit0_msb",
+  "result": {
+    "kind": "fock_counts",
+    "n_modes": 4,
+    "data": [
+      {
+        "1,0,1,0": 261,
+        "0,1,0,1": 276
+      },
+      {
+        "1,0,1,0": 498
+      }
+    ]
+  }
+}
