@@ -7,6 +7,7 @@ from .backend import RouterBackend, RouterCompiled
 from .config import DEFAULT_BASE_URL, RouterConfig
 from .errors import CLIENT_ERROR_CODES, RouterError, TermsWarning
 from .handle import RouterJobHandle
+from .photonic import RouterPhotonicBackend, RouterPhotonicCompiled
 
 
 try:
@@ -23,6 +24,8 @@ __all__ = [
     "RouterConfig",
     "RouterError",
     "RouterJobHandle",
+    "RouterPhotonicBackend",
+    "RouterPhotonicCompiled",
     "TermsWarning",
     "__version__",
 ]

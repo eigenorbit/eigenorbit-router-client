@@ -109,6 +109,11 @@ class RouterConfig(SecretFieldsMixin):
         """False for the Braket simulators SV1 and DM1, True otherwise."""
         return self.device not in _SIMULATORS
 
+    @property
+    def is_photonic(self) -> bool:
+        """True for the Quandela photonic devices (limited preview)."""
+        return self.vendor == "quandela"
+
 
 def _is_int(value: object) -> bool:
     return isinstance(value, int) and not isinstance(value, bool)
