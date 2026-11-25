@@ -1,3 +1,4 @@
+import json
 import subprocess
 import sys
 import uuid
@@ -18,6 +19,7 @@ from eigenkit.photonics.ir import (
     PhotonicCircuitSpec,
     PhotonNumber,
 )
+from eigenkit.photonics.reservoir import random_reservoir_spec, run_photonic_reservoir
 from eigenkit.photonics.wire import photonic_spec_to_json
 
 import eigenorbit_router_client as package
@@ -30,7 +32,7 @@ from eigenorbit_router_client import (
     RouterPhotonicCompiled,
     _client,
 )
-from fake_router import DEVICE_ACCESS_MESSAGE, VALID_KEY
+from fake_router import DEVICE_ACCESS_MESSAGE, VALID_KEY, fock_counts_oracle
 
 
 SPEC = PhotonicCircuitSpec(
@@ -238,3 +240,116 @@ def test_a_refused_submit_sends_no_cancel(fake_router):
     with pytest.raises(RouterError):
         compiled().run(WEIGHTS, ONE)
     assert _cancels(fake_router) == []
+
+
+ROWS = np.array([[0.276], [0.0], [0.1]])
+MANY = np.linspace(0.0, 0.39, 40).reshape(40, 1)
+
+
+def expected(rows, shots=537):
+    return [
+        {tuple(int(n) for n in key.split(",")): count / shots
+         for key, count in fock_counts_oracle([1, 0, 1, 0], list(row), shots).items()}
+        for row in rows
+    ]
+
+
+def refusal(details):
+    return {"error": {"code": "batch_not_supported", "message": "refused",
+                      "details": details}}
+
+
+def test_a_batch_is_one_router_job_in_row_order(fake_router):
+    assert compiled().run_batch(WEIGHTS, ROWS) == expected(ROWS)
+    assert len(posts(fake_router)) == 1
+    assert json.loads(posts(fake_router)[0].content)["inputs"] == ROWS.tolist()
+
+
+def test_rows_above_the_limit_go_in_chunks_one_after_another(fake_router):
+    dists = compiled(device="quandela/sim_belenos").run_batch(WEIGHTS, MANY)
+    sent = posts(fake_router)
+    keys = [r.headers["Idempotency-Key"] for r in sent]
+    events = [(r.method, r.url.path.rsplit("/", 1)[-1]) for r in fake_router.requests]
+    submits = [i for i, event in enumerate(events) if event == ("POST", "jobs")]
+    results = [i for i, event in enumerate(events) if event == ("GET", "result")]
+    assert dists == expected(MANY)
+    assert [len(json.loads(r.content)["inputs"]) for r in sent] == [40, 16, 16, 8]
+    assert keys[1:] == [f"{keys[0]}:{chunk}" for chunk in range(3)]
+    assert len(results) == 3 and all(r < s for r, s in zip(results, submits[2:]))
+    assert fake_router.max_in_flight == 1
+
+
+@pytest.mark.parametrize(
+    "details", [{}, {"max_rows": 0}, {"max_rows": "16"}, {"max_rows": True}, {"max_rows": 3}]
+)
+def test_a_refusal_without_a_usable_row_limit_is_raised_as_it_came(fake_router, details):
+    fake_router.fail_next("POST", "/v1/jobs", status=422, body=refusal(details))
+    with pytest.raises(RouterError) as caught:
+        compiled().run_batch(WEIGHTS, ROWS)
+    assert caught.value.code == "batch_not_supported"
+    assert len(posts(fake_router)) == 1
+
+
+def test_a_chunk_that_is_refused_again_ends_the_call(fake_router):
+    fake_router.fail_next("POST", "/v1/jobs", status=422, body=refusal({"max_rows": 4}),
+                          key_suffix=":1")
+    with pytest.raises(RouterError) as caught:
+        compiled(device="quandela/sim_belenos").run_batch(WEIGHTS, MANY)
+    assert caught.value.code == "batch_not_supported"
+    assert len(posts(fake_router)) == 3
+
+
+def test_a_failed_chunk_raises_and_the_next_one_is_never_sent(fake_router):
+    fake_router.fail_rows = {1: "vendor_failed"}
+    with pytest.raises(RouterError) as caught:
+        compiled(device="quandela/sim_belenos").run_batch(WEIGHTS, MANY)
+    assert caught.value.code == "vendor_failed"
+    assert len(posts(fake_router)) == 3
+    assert _cancels(fake_router) == []
+
+
+def test_an_interrupt_in_the_second_chunk_cancels_that_job_only(fake_router, monkeypatch):
+    def interrupt_in_chunk_two(seconds):
+        if len(posts(fake_router)) == 3:
+            raise KeyboardInterrupt
+
+    monkeypatch.setattr(_client, "_sleep", interrupt_in_chunk_two)
+    with pytest.raises(KeyboardInterrupt):
+        compiled(device="quandela/sim_belenos").run_batch(WEIGHTS, MANY)
+    fetched = [r for r in fake_router.requests if r.url.path.endswith("/result")]
+    assert len(posts(fake_router)) == 3 and len(fetched) == 1
+    first_job = fetched[0].url.path.split("/")[3]
+    cancels = _cancels(fake_router)
+    assert len(cancels) == 1
+    assert cancels[0].url.path != f"/v1/jobs/{first_job}/cancel"
+
+
+def test_a_row_without_a_surviving_shot_is_named(fake_router):
+    fake_router.empty_rows = frozenset({1})
+    with pytest.raises(RuntimeError, match=r"rows \[1\] of 3") as caught:
+        compiled().run_batch(WEIGHTS, ROWS)
+    assert type(caught.value) is RuntimeError
+
+
+def test_an_empty_batch_is_an_empty_list_and_sends_nothing(fake_router):
+    assert compiled().run_batch(WEIGHTS, np.zeros((0, 1))) == []
+    assert fake_router.requests == []
+
+
+@pytest.mark.parametrize("rows", [np.zeros(1), np.zeros((2, 2)), np.zeros((2, 1, 1))])
+def test_a_batch_must_be_two_d_with_the_circuits_inputs(fake_router, rows):
+    with pytest.raises(ValueError):
+        compiled().run_batch(WEIGHTS, rows)
+    assert fake_router.requests == []
+
+
+def test_the_reservoir_runs_as_one_router_job(fake_router):
+    spec, weights = random_reservoir_spec(4, 2, depth=2, input_state=(1, 1, 0, 0),
+                                          rng=np.random.default_rng(0))
+    sequences = np.random.default_rng(1).uniform(-1, 1, (2, 5, 2))
+    executor = RouterPhotonicBackend(config(shots=2000))
+    features = run_photonic_reservoir(spec, weights, sequences, executor=executor)
+    assert features.shape == (2, 5, 10)
+    np.testing.assert_allclose(features.sum(axis=-1), 1.0)
+    assert len(posts(fake_router)) == 1
+    assert len(json.loads(posts(fake_router)[0].content)["inputs"]) == 10

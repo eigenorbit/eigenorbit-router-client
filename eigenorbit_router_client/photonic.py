@@ -140,6 +140,60 @@ class RouterPhotonicCompiled:
         counts = self._run_job(weights, inputs, idempotency_key=str(uuid.uuid4()))[0]
         return _normalized(counts)
 
+    def run_batch(self, weights: Any, rows: Any) -> list[dict[tuple[int, ...], float]]:
+        """Sample the circuit for every row of 2-D `rows`: one distribution per row.
+
+        The batch is one router job. When the router refuses it for having more rows
+        than the device takes (`batch_not_supported` with a usable `max_rows`), the
+        rows go in chunks of that limit, one job after another; an interrupt cancels
+        only the chunk in flight.
+
+        Raises:
+            ValueError: `weights` or `rows` has the wrong shape.
+            RouterError: The router refused or failed a job (a refusal without a
+                usable row limit, and a refused chunk, are raised as they came).
+            RuntimeError: No shot survived post-selection in some rows.
+        """
+        weights = self._checked_weights(weights)
+        rows = np.asarray(rows, dtype=np.float64)
+        if rows.ndim != 2 or rows.shape[1] != self._spec.n_inputs:
+            raise ValueError(
+                f"rows must have shape (n, {self._spec.n_inputs}), got {rows.shape}; "
+                f"run() takes one sample"
+            )
+        n = len(rows)
+        if n == 0:
+            return []
+        call_id = str(uuid.uuid4())
+        max_rows = None
+        try:
+            counts = self._run_job(weights, rows, idempotency_key=call_id)
+        except RouterError as exc:
+            limit = exc.details.get("max_rows")
+            if (
+                exc.code != "batch_not_supported"
+                or isinstance(limit, bool)
+                or not isinstance(limit, int)
+                or not 1 <= limit < n
+            ):
+                raise
+            max_rows = limit
+        if max_rows is not None:
+            counts = []
+            for chunk, start in enumerate(range(0, n, max_rows)):
+                counts += self._run_job(
+                    weights,
+                    rows[start : start + max_rows],
+                    idempotency_key=f"{call_id}:{chunk}",
+                )
+        empty = [i for i, row in enumerate(counts) if sum(row.values()) == 0]
+        if empty:
+            raise RuntimeError(
+                f"no shots survived post-selection on the detected photon count in "
+                f"rows {empty} of {n}; raise RouterConfig(shots=...)"
+            )
+        return [_normalized(row) for row in counts]
+
     def expectation(self, weights: Any, inputs: Any, observable: Any) -> float:
         """The expectation of a Fock-diagonal observable from one sampled run."""
         from eigenkit.photonics.gradients import _check_observable, _expectation
