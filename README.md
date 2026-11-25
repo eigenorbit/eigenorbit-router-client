@@ -8,7 +8,9 @@ EigenOrbit API key instead of separate vendor credentials.
 
 You write the same eigenkit code as with your own vendor credentials and pass
 `provider=RouterConfig(...)`. The router runs the circuit on an Amazon Braket
-simulator or QPU, or on an IBM Quantum device. Results have the same shape,
+simulator or QPU, or on an IBM Quantum device. Photonic circuits run on Quandela
+Cloud devices through `RouterPhotonicBackend` (see
+[Photonic circuits on Quandela Cloud](#photonic-circuits-on-quandela-cloud)). Results have the same shape,
 dtype and bit ordering as the same code on the vendor directly. Braket jobs
 are billed to your prepaid EigenOrbit balance. IBM jobs run on your own IBM
 Quantum account and carry no router charge.
@@ -222,7 +224,9 @@ features = run_photonic_reservoir(spec, weights, sequences, executor=router)
 `run` returns a Fock distribution, `{photon_counts: probability}`, from one
 job. `run_batch`, which `run_photonic_reservoir` uses, sends all rows as one
 job, or several jobs one after another when the batch is above the device's row
-limit. `shots` must be 1 or more. Results are sampled, so there are no
+limit. The whole batch must still fit one router request: a larger one is
+refused with a `RouterError` with the code `request_too_large` (its `details`
+give the limit), so split it yourself. `shots` must be 1 or more. Results are sampled, so there are no
 gradients. A run that is interrupted or times out cancels its job.
 
 ## Saved models

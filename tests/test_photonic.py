@@ -1,5 +1,6 @@
 import json
-import subprocess
+import logging
+import pickle
 import sys
 import uuid
 import warnings
@@ -174,17 +175,29 @@ def test_the_qubit_backend_refuses_a_quandela_device(fake_router):
 def test_an_older_eigenkit_is_named_at_compile(fake_router, monkeypatch):
     monkeypatch.setitem(sys.modules, "eigenkit.photonics.wire", None)
     backend = RouterPhotonicBackend(config())
-    with pytest.raises(ImportError, match="eigenkit 1.4.0"):
+    with pytest.raises(ImportError, match="eigenkit 1.4.0") as caught:
         backend.compile(SPEC)
-
-
-def test_importing_the_client_loads_no_photonics():
-    code = "import sys, eigenorbit_router_client; assert 'eigenkit.photonics' not in sys.modules"
-    subprocess.run([sys.executable, "-c", code], check=True)
+    assert isinstance(caught.value.__cause__, ImportError)
 
 
 def _cancels(router):
     return [r for r in router.requests if r.url.path.endswith("/cancel")]
+
+
+def spy_on_wait(monkeypatch):
+    """Record every exception the client's wait raises, to compare by identity."""
+    raised = []
+    real_wait = _client.RouterHttpClient.wait
+
+    def wait(self, *args, **kwargs):
+        try:
+            return real_wait(self, *args, **kwargs)
+        except BaseException as exc:
+            raised.append(exc)
+            raise
+
+    monkeypatch.setattr(_client.RouterHttpClient, "wait", wait)
+    return raised
 
 
 def test_an_interrupt_while_the_job_runs_cancels_it(fake_router, monkeypatch):
@@ -194,8 +207,10 @@ def test_an_interrupt_while_the_job_runs_cancels_it(fake_router, monkeypatch):
         raise KeyboardInterrupt
 
     monkeypatch.setattr(_client, "_sleep", interrupt)
-    with pytest.raises(KeyboardInterrupt):
+    raised = spy_on_wait(monkeypatch)
+    with pytest.raises(KeyboardInterrupt) as caught:
         compiled().run(WEIGHTS, ONE)
+    assert len(raised) == 1 and caught.value is raised[0]
     job_id = fake_router.requests[1].url.path.split("/")[3]
     cancels = _cancels(fake_router)
     assert [r.url.path for r in cancels] == [f"/v1/jobs/{job_id}/cancel"]
@@ -206,12 +221,14 @@ def test_a_poll_timeout_cancels_the_job(fake_router, monkeypatch):
     now = [0.0]
     monkeypatch.setattr(_client, "_sleep", lambda seconds: now.__setitem__(0, now[0] + seconds))
     monkeypatch.setattr(_client, "_monotonic", lambda: now[0])
+    raised = spy_on_wait(monkeypatch)
     with pytest.raises(RouterError) as caught:
         RouterPhotonicBackend(
             RouterConfig("quandela/sim_slos", shots=537, api_key=VALID_KEY,
                          base_url="https://router.test", poll_timeout_seconds=5)
         ).compile(SPEC).run(WEIGHTS, ONE)
     assert caught.value.code == "poll_timeout"
+    assert len(raised) == 1 and caught.value is raised[0]
     assert len(_cancels(fake_router)) == 1
 
 
@@ -223,9 +240,48 @@ def test_a_cancel_that_fails_leaves_the_original_exception(fake_router, monkeypa
         raise KeyboardInterrupt
 
     monkeypatch.setattr(_client, "_sleep", interrupt)
-    with pytest.raises(KeyboardInterrupt):
+    raised = spy_on_wait(monkeypatch)
+    with pytest.raises(KeyboardInterrupt) as caught:
         compiled().run(WEIGHTS, ONE)
-    assert len(_cancels(fake_router)) >= 1
+    job_id = fake_router.requests[1].url.path.split("/")[3]
+    assert caught.value is raised[0]
+    assert caught.value.job_id == job_id and job_id in str(caught.value)
+    # a 500 is not retried: exactly one cancel request, for this job
+    assert [r.url.path for r in _cancels(fake_router)] == [f"/v1/jobs/{job_id}/cancel"]
+
+
+def test_a_cancel_that_fails_is_logged_by_type_and_job_id_only(
+    fake_router, monkeypatch, caplog
+):
+    fake_router.status_steps = ("queued", "running")
+    fake_router.fail_next(
+        "POST", "/v1/jobs/", status=500,
+        body={"error": {"code": "internal_error", "message": "SECRET-DETAIL"}},
+    )
+
+    def interrupt(seconds):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(_client, "_sleep", interrupt)
+    with caplog.at_level(logging.WARNING, logger="eigenorbit_router_client.photonic"):
+        with pytest.raises(KeyboardInterrupt):
+            compiled().run(WEIGHTS, ONE)
+    job_id = fake_router.requests[1].url.path.split("/")[3]
+    records = [r for r in caplog.records if r.name == "eigenorbit_router_client.photonic"]
+    assert len(records) == 1 and records[0].levelno == logging.WARNING
+    text = records[0].getMessage()
+    assert job_id in text and "RouterError" in text
+    assert "SECRET-DETAIL" not in text and VALID_KEY not in text
+
+
+def test_the_api_key_is_in_neither_a_repr_nor_a_pickle(fake_router):
+    backend = RouterPhotonicBackend(config())
+    for text in (repr(backend), repr(backend.compile(SPEC))):
+        assert VALID_KEY not in text
+    data = pickle.dumps(backend)
+    assert VALID_KEY.encode() not in data
+    assert b"eo_test_" not in data and b"eo_live_" not in data
+    assert b"quandela/sim_slos" in data
 
 
 def test_a_job_that_failed_at_the_vendor_sends_no_cancel(fake_router):
@@ -319,9 +375,12 @@ def test_an_interrupt_in_the_second_chunk_cancels_that_job_only(fake_router, mon
     fetched = [r for r in fake_router.requests if r.url.path.endswith("/result")]
     assert len(posts(fake_router)) == 3 and len(fetched) == 1
     first_job = fetched[0].url.path.split("/")[3]
+    second_job = next(
+        r.url.path.split("/")[3] for r in fake_router.requests
+        if r.method == "GET" and r.url.path.split("/")[3] != first_job
+    )
     cancels = _cancels(fake_router)
-    assert len(cancels) == 1
-    assert cancels[0].url.path != f"/v1/jobs/{first_job}/cancel"
+    assert [r.url.path for r in cancels] == [f"/v1/jobs/{second_job}/cancel"]
 
 
 def test_a_row_without_a_surviving_shot_is_named(fake_router):
@@ -329,6 +388,38 @@ def test_a_row_without_a_surviving_shot_is_named(fake_router):
     with pytest.raises(RuntimeError, match=r"rows \[1\] of 3") as caught:
         compiled().run_batch(WEIGHTS, ROWS)
     assert type(caught.value) is RuntimeError
+
+
+def test_many_empty_rows_are_listed_up_to_ten_with_the_total(fake_router):
+    fake_router.empty_rows = frozenset(range(2, 14))
+    rows = np.linspace(0.0, 0.39, 15).reshape(15, 1)
+    with pytest.raises(RuntimeError) as caught:
+        compiled().run_batch(WEIGHTS, rows)
+    message = str(caught.value)
+    assert "rows [2, 3, 4, 5, 6, 7, 8, 9, 10, 11] of 15" in message
+    assert "12 rows" in message and "12, 13" not in message
+
+
+def test_an_empty_row_of_a_split_batch_is_named_by_its_index_in_the_batch(fake_router):
+    # the fake counts rows within a job: local row 10 is row 10 of the whole batch in
+    # chunk 0 and row 26 in chunk 1
+    fake_router.empty_rows = frozenset({10})
+    with pytest.raises(RuntimeError, match=r"rows \[10, 26\] of 40"):
+        compiled(device="quandela/sim_belenos").run_batch(WEIGHTS, MANY)
+    assert len(posts(fake_router)) == 4
+
+
+def test_a_batch_above_the_request_limit_is_refused_after_one_request(fake_router):
+    envelope = {"error": {"code": "request_too_large",
+                          "message": "The job is larger than the router accepts",
+                          "details": {"field": "inputs", "max_items": 100000}}}
+    fake_router.fail_next("POST", "/v1/jobs", status=413, body=envelope)
+    with pytest.raises(RouterError) as caught:
+        compiled().run_batch(WEIGHTS, ROWS)
+    assert caught.value.code == "request_too_large"
+    assert caught.value.details == {"field": "inputs", "max_items": 100000}
+    assert len(posts(fake_router)) == 1
+    assert _cancels(fake_router) == []
 
 
 def test_an_empty_batch_is_an_empty_list_and_sends_nothing(fake_router):

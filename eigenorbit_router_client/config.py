@@ -35,6 +35,9 @@ _LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 class RouterConfig(SecretFieldsMixin):
     """Router device and connection settings; pass as `provider=`.
 
+    For a `quandela/` device the config goes to `RouterPhotonicBackend` instead,
+    and `shots` must be 1 or more.
+
     Attributes:
         device: Router device ID `<vendor>/<device>`, e.g. `"braket/sv1"`.
         shots: 0 asks a simulator for exact results; a positive int samples.

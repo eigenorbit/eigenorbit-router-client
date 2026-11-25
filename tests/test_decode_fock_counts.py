@@ -56,7 +56,7 @@ def test_bit_order_is_not_read():
         payload([{"1,0,1,0": 1.5}]),
         payload([{"1,0,1,0": True}]),
         payload([{"1,0,1,0": -1}]),
-        # beyond the brief: other malformed keys, counts and result objects
+        # other malformed keys, counts and result objects
         payload([{"1,0,1,0,0": 1}]),
         payload([{"1,0,1,0,": 1}]),
         payload([{"1,,1,0": 1}]),

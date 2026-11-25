@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import contextlib
+import logging
 import uuid
 from typing import TYPE_CHECKING, Any
 
@@ -16,6 +16,9 @@ from .errors import RouterError
 
 if TYPE_CHECKING:
     from eigenkit.photonics.ir import PhotonicCircuitSpec
+
+_logger = logging.getLogger(__name__)
+_EMPTY_ROWS_LISTED = 10
 
 
 def _check_config(config: RouterConfig) -> None:
@@ -118,10 +121,21 @@ class RouterPhotonicCompiled:
                     job_id=job_id,
                 )
         except BaseException:
-            with contextlib.suppress(Exception):
-                self._http.cancel(job_id)
+            self._cancel(job_id)
             raise
         raise RouterError.from_job(job)
+
+    def _cancel(self, job_id: str) -> None:
+        """Ask the router to cancel `job_id`; a failed request is logged, not raised."""
+        try:
+            self._http.cancel(job_id)
+        except Exception as exc:
+            _logger.warning(
+                "could not cancel router job %s (%s); it may still be running and "
+                "hold the device",
+                job_id,
+                type(exc).__name__,
+            )
 
     def run(self, weights: Any, inputs: Any) -> dict[tuple[int, ...], float]:
         """Sample the circuit once; the Fock distribution `{state: probability}`.
@@ -146,7 +160,9 @@ class RouterPhotonicCompiled:
         The batch is one router job. When the router refuses it for having more rows
         than the device takes (`batch_not_supported` with a usable `max_rows`), the
         rows go in chunks of that limit, one job after another; an interrupt cancels
-        only the chunk in flight.
+        only the chunk in flight. The whole batch must still fit one router request:
+        a larger one is refused with `RouterError` code `request_too_large` after
+        one request, and the caller splits it.
 
         Raises:
             ValueError: `weights` or `rows` has the wrong shape.
@@ -188,9 +204,15 @@ class RouterPhotonicCompiled:
                 )
         empty = [i for i, row in enumerate(counts) if sum(row.values()) == 0]
         if empty:
+            listed = empty[:_EMPTY_ROWS_LISTED]
+            more = (
+                f" (the first {len(listed)} of {len(empty)} rows)"
+                if len(empty) > len(listed)
+                else ""
+            )
             raise RuntimeError(
                 f"no shots survived post-selection on the detected photon count in "
-                f"rows {empty} of {n}; raise RouterConfig(shots=...)"
+                f"rows {listed} of {n}{more}; raise RouterConfig(shots=...)"
             )
         return [_normalized(row) for row in counts]
 
