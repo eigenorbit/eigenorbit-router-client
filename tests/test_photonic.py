@@ -5,6 +5,7 @@ import sys
 import uuid
 import warnings
 
+import httpx
 import numpy as np
 import pytest
 from eigenkit import CostWarning
@@ -308,6 +309,143 @@ def test_a_cancel_that_fails_is_logged_by_type_and_job_id_only(
     text = records[0].getMessage()
     assert job_id in text and "RouterError" in text
     assert "SECRET-DETAIL" not in text and VALID_KEY not in text
+
+
+class InterruptOnSubmit(httpx.BaseTransport):
+    """Raise KeyboardInterrupt once, on the `nth` POST /v1/jobs, around the router.
+
+    With `after_create` the request has reached the router (the job exists) when the
+    interrupt is raised; otherwise it is raised before the router sees the request.
+    """
+
+    def __init__(self, router, *, nth=1, after_create=True, then=None):
+        self.router = router
+        self.nth = nth
+        self.after_create = after_create
+        self.then = then
+        self.seen = 0
+        self.interrupt = KeyboardInterrupt()
+
+    def handle_request(self, request):
+        if request.method == "POST" and request.url.path == "/v1/jobs":
+            self.seen += 1
+            if self.seen == self.nth:
+                if not self.after_create:
+                    raise self.interrupt
+                self.router.transport.handle_request(request)
+                if self.then is not None:
+                    self.then()
+                raise self.interrupt
+        return self.router.transport.handle_request(request)
+
+
+def interrupt_on_submit(router, monkeypatch, **options):
+    transport = InterruptOnSubmit(router, **options)
+    monkeypatch.setattr(
+        _client,
+        "_make_http_client",
+        lambda *, base_url, timeout: httpx.Client(
+            base_url=base_url, timeout=timeout, follow_redirects=False,
+            transport=transport,
+        ),
+    )
+    return transport
+
+
+def test_an_interrupt_after_the_router_created_the_job_cancels_that_job(
+    fake_router, monkeypatch
+):
+    transport = interrupt_on_submit(fake_router, monkeypatch, after_create=True)
+    with pytest.raises(KeyboardInterrupt) as caught:
+        compiled().run(WEIGHTS, ONE)
+    assert caught.value is transport.interrupt
+    sent = posts(fake_router)
+    assert len(sent) == 2
+    assert sent[0].headers["Idempotency-Key"] == sent[1].headers["Idempotency-Key"]
+    assert sent[0].content == sent[1].content
+    assert len(fake_router.jobs) == 1
+    (job_id, job), = fake_router.jobs.items()
+    assert [r.url.path for r in _cancels(fake_router)] == [f"/v1/jobs/{job_id}/cancel"]
+    assert job["status"] == "cancelled"
+
+
+def test_an_interrupt_before_the_request_reached_the_router_leaves_no_running_job(
+    fake_router, monkeypatch
+):
+    transport = interrupt_on_submit(fake_router, monkeypatch, after_create=False)
+    with pytest.raises(KeyboardInterrupt) as caught:
+        compiled().run(WEIGHTS, ONE)
+    assert caught.value is transport.interrupt
+    # the router never saw the interrupted request; it sees the replay only
+    assert len(posts(fake_router)) == 1
+    assert len(fake_router.jobs) == 1
+    (job_id, job), = fake_router.jobs.items()
+    assert [r.url.path for r in _cancels(fake_router)] == [f"/v1/jobs/{job_id}/cancel"]
+    assert job["status"] == "cancelled"
+
+
+def test_a_replay_that_fails_is_logged_by_type_only_and_the_interrupt_still_arrives(
+    fake_router, monkeypatch, caplog
+):
+    def replay_fails():
+        fake_router.fail_next(
+            "POST", "/v1/jobs", status=500,
+            body={"error": {"code": "internal_error", "message": "SECRET-DETAIL"}},
+        )
+
+    transport = interrupt_on_submit(
+        fake_router, monkeypatch, after_create=True, then=replay_fails
+    )
+    with caplog.at_level(logging.WARNING, logger="eigenorbit_router_client.photonic"):
+        with pytest.raises(KeyboardInterrupt) as caught:
+            compiled().run(WEIGHTS, ONE)
+    assert caught.value is transport.interrupt
+    sent = posts(fake_router)
+    assert len(sent) == 2 and _cancels(fake_router) == []
+    records = [r for r in caplog.records if r.name == "eigenorbit_router_client.photonic"]
+    assert len(records) == 1 and records[0].levelno == logging.WARNING
+    text = records[0].getMessage()
+    assert "RouterError" in text and "may still be running" in text
+    key = sent[0].headers["Idempotency-Key"]
+    assert "SECRET-DETAIL" not in text and VALID_KEY not in text and key not in text
+    assert "photonic_sample" not in text
+
+
+@pytest.mark.parametrize("refusal", ["no_access", "batch_not_supported"])
+def test_a_definite_refusal_of_the_submit_is_not_replayed_or_cancelled(
+    fake_router, refusal
+):
+    if refusal == "no_access":
+        fake_router.quandela_access = False
+    else:
+        fake_router.fail_next(
+            "POST", "/v1/jobs", status=422,
+            body={"error": {"code": "batch_not_supported", "message": "no batches",
+                            "details": {}}},
+        )
+    with pytest.raises(RouterError):
+        compiled().run(WEIGHTS, ONE)
+    assert len(posts(fake_router)) == 1
+    assert fake_router.jobs == {} and _cancels(fake_router) == []
+
+
+def test_an_interrupt_in_the_second_chunks_submit_cancels_only_that_job(
+    fake_router, monkeypatch
+):
+    # POSTs: the whole batch (refused), chunk 0, chunk 1.
+    transport = interrupt_on_submit(fake_router, monkeypatch, nth=3, after_create=True)
+    with pytest.raises(KeyboardInterrupt) as caught:
+        compiled(device="quandela/sim_belenos").run_batch(WEIGHTS, MANY)
+    assert caught.value is transport.interrupt
+    assert len(posts(fake_router)) == 4
+    keys = [r.headers["Idempotency-Key"] for r in posts(fake_router)]
+    assert keys[2] == keys[3] and keys[2].endswith(":1")
+    assert len(fake_router.jobs) == 2
+    first_id = fake_router._idempotency[keys[1]][1]
+    second_id = fake_router._idempotency[keys[2]][1]
+    assert [r.url.path for r in _cancels(fake_router)] == [f"/v1/jobs/{second_id}/cancel"]
+    assert fake_router.jobs[first_id]["status"] != "cancelled"
+    assert fake_router.jobs[second_id]["status"] == "cancelled"
 
 
 def test_the_api_key_is_in_neither_a_repr_nor_a_pickle(fake_router):

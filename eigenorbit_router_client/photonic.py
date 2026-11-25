@@ -102,12 +102,18 @@ class RouterPhotonicCompiled:
         """Submit one job, wait, fetch and decode: one count dict per input row.
 
         An exception raised while the job is in flight (an interrupt, the poll
-        timeout, a failed fetch) cancels the job and is re-raised unchanged.
+        timeout, a failed fetch) cancels the job and is re-raised unchanged. So does
+        an interrupt during the submit itself, which may have left a job behind.
         """
         rows = 1 if np.ndim(inputs) == 1 else len(inputs)
-        job = self._http.submit(
-            self.build_request(weights, inputs), idempotency_key=idempotency_key
-        )
+        body = self.build_request(weights, inputs)
+        try:
+            job = self._http.submit(body, idempotency_key=idempotency_key)
+        except RouterError:
+            raise
+        except BaseException:
+            self._cancel_interrupted_submit(body, idempotency_key)
+            raise
         job_id = job.get("id")
         if not isinstance(job_id, str) or not job_id:
             raise RouterError("invalid_response", "the router returned a job without an id")
@@ -128,6 +134,26 @@ class RouterPhotonicCompiled:
             self._cancel(job_id)
             raise
         raise RouterError.from_job(job)
+
+    def _cancel_interrupted_submit(self, body: dict[str, Any], idempotency_key: str) -> None:
+        """Cancel the job an interrupted submit may have created.
+
+        The same request goes out once more with the same Idempotency-Key: the router
+        answers with the job it already created, or creates it now, and the job is
+        cancelled either way. A failure here is logged by type, not raised.
+        """
+        try:
+            job = self._http.submit(body, idempotency_key=idempotency_key)
+            job_id = job.get("id")
+            if not isinstance(job_id, str) or not job_id:
+                raise RouterError("invalid_response", "the router returned a job without an id")
+            self._http.cancel(job_id)
+        except Exception as exc:
+            _logger.warning(
+                "could not cancel the router job of an interrupted submit (%s); it "
+                "may still be running and hold the device",
+                type(exc).__name__,
+            )
 
     def _cancel(self, job_id: str) -> None:
         """Ask the router to cancel `job_id`; a failed request is logged, not raised."""
