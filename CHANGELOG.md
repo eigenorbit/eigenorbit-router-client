@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v0.4.0 (2026-11-26)
+
+### Features
+
+- Run photonic circuits on Quandela Cloud through the router
+  ([#9](https://github.com/eigenorbit/eigenorbit-router-client/pull/9),
+  [`ac5eeb2`](https://github.com/eigenorbit/eigenorbit-router-client/commit/ac5eeb20703be2f1899ad1460441e0d2a3f389f4))
+
+
 ## v0.3.0 (2026-11-20)
 
 ### Documentation
